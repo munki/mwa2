@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% load static %}
+<link rel="stylesheet"
+  href='{% get_static_prefix %}css/bootstrap.min.css' 
+  type="text/css" media="all" />
+<style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+</style>
+<link rel="stylesheet"
+  href='{% get_static_prefix %}css/bootstrap-theme.min.css' 
+  type="text/css" media="all" />
+<link rel="stylesheet"
+  href='{% get_static_prefix %}css/dataTables.bootstrap.min.css' 
+  type="text/css" media="all" />
+<link rel="stylesheet"
+  href='{% get_static_prefix %}css/jqueryui/jquery-ui.min.css' 
+  type="text/css" media="all" />
+
+{% block extra_style %}{% endblock %}
+
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/jquery.min.js'>
+</script>
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/jquery-ui.min.js'>
+</script>
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/jquery.dataTables.min.js'>
+</script>
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/bootstrap.min.js'>
+</script>
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/bootstrap3-typeahead.min.js'>
+</script>
+<script type='text/javascript' 
+  src='{% get_static_prefix %}js/dataTables.bootstrap.min.js'>
+</script>
+
+{% block java_script %}{% endblock %}
+<title>MunkiWebAdmin2</title>
+</head>
+{% block body_tag %}<body>{% endblock %}
+
+{% block main_menu %}
+<nav class="navbar navbar-fixed-top navbar-inverse">
+  <div class="navbar-inner">
+    <div class="container-fluid">
+      <div class="navbar-header">
+         <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" 
+          data-target="#nav-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">MunkiWebAdmin2</a>
+      </div>
+
+      <div class="collapse navbar-collapse" id="nav-collapse">
+        <ul class="nav navbar-nav" id="mainmenu">
+          <li {% if page == 'manifests' %} class="active" {% endif %}>
+            <a href="/manifests/">Manifests</a>
+          </li>
+          <li {% if page == 'pkgsinfo' %} class="active" {% endif %}>
+            <a href="/pkgsinfo/">Package Info</a>
+          </li>
+          <!--<li {% if page == 'catalogs' %} class="active" {% endif %}>
+            <a href="/catalogs">Catalogs</a>
+          </li>-->
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li id="admin" class="loginlogout"><a href="/admin">Admin</a></li>
+          <li id="login" class="loginlogout">
+            {% if user.is_authenticated %}
+              <a href="/logout">Logout {{ user.username }}</a>
+            {% else %}
+              <a href="/login">Login</a>
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+<div class="container-fluid">
+  <div id="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<div id="footer">
+  <div class="clearingdiv"></div>
+</div>
+</body>
+</html>

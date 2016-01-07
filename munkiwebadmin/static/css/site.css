@@ -1,0 +1,13 @@
+.error, .error a {
+    color: red;
+    font-weight: bold;
+    text-decoration: none;
+}
+.warning, .warning a {
+    color: #c70;
+    font-weight: bold;
+    text-decoration: none;
+}
+.error a:hover, .warning a:hover {
+    text-decoration: underline;
+}

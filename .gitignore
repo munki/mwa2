@@ -1,0 +1,6 @@
+*.pyc
+*.pyo
+settings.py
+db.sqlite3
+.DS_Store
+unused_*

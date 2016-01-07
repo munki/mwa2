@@ -1,0 +1,51 @@
+#item_editor,
+#item_list {
+    overflow-y: scroll;
+}
+
+/* fix for DataTables duplicate sorting controls */
+.dataTables_scrollBody thead {
+    visibility: hidden;
+}
+
+#item_list .list {
+	list-style: none; 
+	padding: 0px; 
+	margin: 0px;
+}
+
+#item_list .listborder {
+	border-top: solid 1px #DDD;
+}
+
+/* display script items in a monospaced font */
+[data-path="preinstall_script"] textarea,
+[data-path="postinstall_script"] textarea,
+[data-path="preuninstall_script"] textarea,
+[data-path="postuninstall_script"] textarea,
+[data-path="uninstall_script"] textarea,
+[data-path="installcheck_script"] textarea,
+[data-path="uninstallcheck_script"] textarea {
+    font-family: Courier, monospace;
+    font-size: 12px;
+}
+
+/* display magnifying glass icon inside the search field*/
+.left-inner-addon {
+    position: relative;
+}
+.left-inner-addon input {
+    padding-left: 30px;    
+}
+.left-inner-addon span.icon-addon {
+    position: absolute;
+    padding: 10px 10px;
+    pointer-events: none;
+    color: #666;
+}
+
+/* adjustments to make ACE editor use the whole space */
+#plist {
+    position: absolute;
+    height: 800px;
+}

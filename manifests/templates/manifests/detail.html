@@ -1,0 +1,131 @@
+<h4>{{ pathname }}</h4>
+<div class='pull-right' id='delete_btn'>
+{% if perms.manifest.change_manifestfile %}
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#copyManifestModal">Duplicate</button>
+{% endif %}
+{% if perms.manifest.delete_manifestfile %}
+    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteConfirmationModal">Delete</button>
+{% endif %}
+</div>
+{% if perms.manifest.change_manifestfile %}
+<div class='pull-right hidden' id='save_and_cancel'>
+  <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelEditConfirmationModal">Cancel</button>
+  <button type="button" class="btn btn-success" onClick="saveManifestItem()">Save</button>
+</div>
+{% else %}
+<div class='pull-right hidden' id='save_and_cancel'>
+  <span class="bg-danger">You don't have permissions to make changes here.</span>
+  <button type="button" class="btn" onClick="cancelEdit()">Cancel</button>
+</div>
+{% endif %}
+<div role="tabpanel">
+  <!-- Nav tabs -->
+  <ul class="nav nav-tabs" role="tablist" id="editortabs">
+    <li role="presentation" class="active">
+      <a href="#basicstab" aria-controls="basicstab" role="tab" data-toggle="tab">Basics</a>
+    </li>
+    <li role="presentation">
+      <a href="#detailtab" aria-controls="editortab" role="tab" data-toggle="tab">Details</a>
+    </li>
+    <li role="presentation">
+      <a href="#plisttab" aria-controls="plisttab" role="tab" data-toggle="tab">plist</a>
+    </li>
+  </ul>
+  <!-- Tab panes -->
+  <div class="tab-content" id="item_editor">
+    <div role="tabpanel" class="tab-pane active" id="basicstab">
+        <div id="basics" class="plist-editor"></div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="detailtab">
+        <div id="detail" class="plist-editor"></div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="plisttab">
+        <!--<textarea id="p l i s t" rows=30></textarea>-->
+        <div id='plist'>{{ plist_text }}</div>
+    </div>
+   </div>
+</div>
+<!--
+Bootstrap modal for confirming manifest deletion
+-->
+<div class="modal fade" id="deleteConfirmationModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Delete manifest?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Really delete <strong>{{ pathname }}</strong>?</p>
+        <p>This action cannot be undone.</p>
+        <br>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal"  onClick="deleteManifestItem()">Delete</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!--
+Bootstrap modal for confirming canceling editing
+-->
+<div class="modal fade" id="cancelEditConfirmationModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Discard your changes?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Really discard your changes to <strong>{{ pathname }}</strong>?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal"  onClick="cancelEdit()">Discard Changes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Continue Editing</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!--
+Bootstrap modal for saving or canceling when loading a different manifest
+-->
+<div class="modal fade" id="saveOrCancelConfirmationModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Save your changes?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Save your changes to <strong>{{ pathname }}</strong> before proceeding?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal"  onClick="discardChangesAndLoadNext()">Discard Changes</button>
+        <button type="button" class="btn btn-success" data-dismiss="modal" onClick="saveChangesAndLoadNext()">Save Changes</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!--
+Bootstrap modal for duplicating a manifest
+-->
+<div class="modal fade" data-backdrop="static" id="copyManifestModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Duplicate manifest</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="recipient-name" class="control-label">New manifest name:</label>
+            <input type="text" class="form-control" id="manifest-copy-name">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onClick='duplicateManifestItem()'>Duplicate</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>

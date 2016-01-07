@@ -1,0 +1,116 @@
+#leftcolumn {
+	/*background: #CCCCCC;*/
+	float: left;
+	width: 40%;
+	height: 100%;
+}
+#detail {
+	/*background: #CCCCCC;*/
+	float: left;
+	width: 60%;
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+div.catalog_contents {
+  max-height: 512px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+table.main {
+	/*font: 12px Helvetica, Arial, Verdana, sans-serif;*/
+	border-right: 1px solid #C1DAD7;
+	border-left: 1px solid #C1DAD7;
+	border-bottom: 1px solid #C1DAD7;
+	border-top: 1px solid #C1DAD7;
+	text-align: left;
+	padding: 4px 4px 4px 4px;
+	background: #FFFFFF;
+	width: 100%;
+	/*height: 512px;*/
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+div.item_detail {
+  /*max-height: 512px;
+  overflow-x: hidden;
+  overflow-y: auto;*/
+
+}
+table.detail {
+	/*font: 10px Helvetica, Arial, Verdana, sans-serif;*/
+	font: 10px;
+	border-right: 1px solid #C1DAD7;
+	border-left: 1px solid #C1DAD7;
+	border-bottom: 1px solid #C1DAD7;
+	border-top: 1px solid #C1DAD7;
+	text-align: left;
+	padding: 6px 6px 6px 12px;
+	background: #DDDDDD;
+}
+th.label {
+	text-align: right;
+	vertical-align: top;
+}
+td.label {
+	vertical-align: top;
+	width: 60%;
+}
+td.value {
+	background: #EEEEEE;
+}
+td.prewrap, td.code {
+  white-space: pre-wrap;
+}
+td.code {
+  font-family: Andale Mono, monospace;
+  font-size: 9pt;
+}
+table.catalog_items {
+	font: 14px Helvetica, Arial, Verdana, sans-serif;
+	border-right: 1px solid #C1DAD7;
+	border-left: 1px solid #C1DAD7;
+	border-bottom: 1px solid #C1DAD7;
+	border-top: 1px solid #C1DAD7;
+	text-align: left;
+	padding: 6px 6px 6px 12px;
+	background: #FFFFFF;
+	width: 100%;
+}
+table.catalog_detail {
+	font: 12px Helvetica, Arial, Verdana, sans-serif;
+	border-right: 1px solid #C1DAD7;
+	border-left: 1px solid #C1DAD7;
+	border-bottom: 1px solid #C1DAD7;
+	border-top: 1px solid #C1DAD7;
+	text-align: left;
+	padding: 6px 6px 6px 12px;
+	background: #DDDDDD;
+}
+td.item-name {
+	vertical-align: top;
+}
+tr {
+	background: #EEEEEE;
+}
+#item_name {
+	font: bold 18px Helvetica, Arial, Verdana, sans-serif;
+	padding: 6px 6px 6px 12px;
+}
+.selected {
+	background: #BBCCFF;
+}
+.wraptext {
+	table-layout: fixed;
+	word-wrap: break-word;
+}
+
+.list {
+	list-style: none; 
+	padding: 0px; 
+	margin: 0px;
+}
+
+.listborder {
+	border-top: solid 1px #DDD;
+}
