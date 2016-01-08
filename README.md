@@ -15,7 +15,7 @@ On OS X (10.7+):
 MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 ```
 
-    Edit `MUNKI_REPO_DIR` to point to a Munki repo to use with MWA2. Please don't point it at your production repo unless you like living very dangerously.
+*   Edit `MUNKI_REPO_DIR` to point to a Munki repo to use with MWA2. Please don't point it at your production repo unless you like living very dangerously.
 
 *   Once all the setup task are complete, a development server will be launched, and MWA2 should be available at http://localhost:8080
 
