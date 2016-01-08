@@ -17,7 +17,9 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 *   Edit `MUNKI_REPO_DIR` to point to a Munki repo to use with MWA2. Please don't point it at your production repo unless you like living very dangerously.
 
-*   Once all the setup task are complete, a development server will be launched, and MWA2 should be available at http://localhost:8080
+*   After editing `settings.py`, run `run_mwa2.sh` again to continue the setup process.
+
+*   Once all the setup tasks are complete, a development server will be launched, and MWA2 should be available at http://localhost:8080
 
 #### run_mwa2.sh script details
 
