@@ -80,9 +80,9 @@
           <li id="admin" class="loginlogout"><a href="/admin">Admin</a></li>
           <li id="login" class="loginlogout">
             {% if user.is_authenticated %}
-              <a href="/logout">Logout {{ user.username }}</a>
+              <a href="/logout/">Logout {{ user.username }}</a>
             {% else %}
-              <a href="/login">Login</a>
+              <a href="/login/">Login</a>
             {% endif %}
           </li>
         </ul>
