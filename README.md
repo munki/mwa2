@@ -1,3 +1,13 @@
+## Introduction
+
+This is version 2 of MunkiWebAdmin, a web-based administration tool for Munki.
+
+All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdmin2 — consider using Sal or MunkiReport-PHP for reporting. Both are excellent.
+
+MunkiWebAdmin2 focuses on web-based editing of manifests and pkginfo files.
+
+This is in-developement code. Please do not point it at a production Munki repo.
+
 ## Getting started
 
 On OS X (10.7+):
