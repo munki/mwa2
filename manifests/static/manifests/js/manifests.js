@@ -17,6 +17,46 @@ $(document).ready(function() {
     getCatalogData();
     $('#listSearchField').focus();
     do_resize();
+
+    // Submit the new manifest form when the user clicks the Create button...
+    $('[data-new="manifest"]').click( function(){
+      newManifestItem();
+    });
+    //...or when they press the return key in the form field.
+    $('#new-manifest-name').keydown( function(event){
+      if(event.keyCode == 13) {
+        // Prevent the browser from attempting to submit the form
+        event.preventDefault();
+        event.stopPropagation();
+        newManifestItem();
+      }
+    });
+
+    // Note the use of $(document).on() below: This is to address the fact
+    // that the DOM elements we want to listen to might not yet exist.
+
+    // Submit the duplicate manifest form when the user clicks the Duplicate
+    // button...
+    $(document).on('click', '[data-copy="manifest"]', function(){
+      duplicateManifestItem();
+    });
+
+    //...or when they press the return key in the form field.
+    $(document).on('keydown', '#manifest-copy-name', function(event) {
+      if (event.keyCode == 13) {
+        // Prevent the browser from attempting to submit the form
+        event.preventDefault();
+        event.stopPropagation();
+        duplicateManifestItem();
+      }
+    });
+
+    // When a modal is shown, and it contains an <input>, make sure it's
+    // selected when the modal is shown.
+    $(document).on('shown.bs.modal', '.modal', function(event){
+      $(event.currentTarget).find('input').select();
+    })
+
 } );
 
 function getCatalogNames() {
@@ -122,15 +162,15 @@ function saveChangesAndLoadNext() {
 
 var js_obj = {};
 
-var key_list = {'catalogs': 'Catalogs', 
+var key_list = {'catalogs': 'Catalogs',
                 'included_manifests': 'Included Manifests',
                 'managed_installs': 'Managed Installs',
-                'managed_uninstalls': 'Managed Uninstalls', 
-                'managed_updates': 'Managed Updates', 
-                'optional_installs': 'Optional Installs', 
+                'managed_uninstalls': 'Managed Uninstalls',
+                'managed_updates': 'Managed Updates',
+                'optional_installs': 'Optional Installs',
                 };
 
-var keys_and_types = {'catalogs': ['catalogname'], 
+var keys_and_types = {'catalogs': ['catalogname'],
                       'conditional_items': [{'condition': 'os_vers_minor > 9',
                                              'managed_installs': ['itemname']}],
                       'included_manifests': ['manifestname'],
@@ -305,7 +345,7 @@ function constructBasics() {
 function constructDetail() {
     if (js_obj != null) {
         $('#detail').html('')
-        $('#detail').plistEditor(js_obj, 
+        $('#detail').plistEditor(js_obj,
             { change: updatePlistAndBasics,
               keytypes: keys_and_types,
               validator: validator});
@@ -347,7 +387,7 @@ function plistChanged() {
     var val = editor.getValue();
     if (val) {
         try { js_obj = PlistParser.parse(val); }
-        catch (e) { 
+        catch (e) {
             //alert('Error in parsing plist. ' + e);
             js_obj = null;
         }
@@ -378,7 +418,7 @@ function getManifestItem(pathname) {
           $('#manifest_detail').html(data);
           val = $('#plist').text();
           try { js_obj = PlistParser.parse(val); }
-          catch (e) { 
+          catch (e) {
                 //alert('Error in parsing plist. ' + e);
                 js_obj = null;
           }
@@ -426,7 +466,7 @@ function duplicateManifestItem() {
     var manifestItemURL = '/manifests/' + pathname;
     var plist_data = editor.getValue();
     var postdata = JSON.stringify({'plist_data': plist_data})
-    
+
     $.ajax({
       method: 'POST',
       url: manifestItemURL,
@@ -496,7 +536,7 @@ function newManifestItem() {
     $('.modal-backdrop').remove();
     $('#new-manifest-name').val("");
     var manifestItemURL = '/manifests/' + pathname;
-    
+
     $.ajax({
       method: 'POST',
       url: manifestItemURL,
@@ -506,7 +546,7 @@ function newManifestItem() {
           $('#manifest_detail').html(data);
             val = $('#plist').text();
             try { js_obj = PlistParser.parse(val); }
-            catch (e) { 
+            catch (e) {
                   //alert('Error in parsing plist. ' + e);
                   js_obj = null;
             }

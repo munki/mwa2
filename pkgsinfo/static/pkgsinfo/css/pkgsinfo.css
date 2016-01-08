@@ -9,8 +9,8 @@
 }
 
 #item_list .list {
-	list-style: none; 
-	padding: 0px; 
+	list-style: none;
+	padding: 0px;
 	margin: 0px;
 }
 
@@ -35,17 +35,11 @@
     position: relative;
 }
 .left-inner-addon input {
-    padding-left: 30px;    
+    padding-left: 30px;
 }
 .left-inner-addon span.icon-addon {
     position: absolute;
     padding: 10px 10px;
     pointer-events: none;
     color: #666;
-}
-
-/* adjustments to make ACE editor use the whole space */
-#plist {
-    position: absolute;
-    height: 800px;
 }

@@ -115,7 +115,7 @@ Bootstrap modal for duplicating a manifest
         <h4 class="modal-title">Duplicate manifest</h4>
       </div>
       <div class="modal-body">
-        <form>
+        <form id="manifest-duplicate-form">
           <div class="form-group">
             <label for="recipient-name" class="control-label">New manifest name:</label>
             <input type="text" class="form-control" id="manifest-copy-name">
@@ -124,7 +124,7 @@ Bootstrap modal for duplicating a manifest
       </div>
       <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" onClick='duplicateManifestItem()'>Duplicate</button>
+          <button type="button" data-copy="manifest" class="btn btn-primary">Duplicate</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
