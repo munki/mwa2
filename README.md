@@ -19,4 +19,17 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 *   Once all the setup task are complete, a development server will be launched, and MWA2 should be available at http://localhost:8080
 
+### run_mwa2.sh script details
+
+*   Clones `https://github.com/munki/mwa2.git` from GitHub into the script directory (if needed)
+
+*   Copies `settings_template.py` to `settings.py` and asks you to edit it. (if needed)
+
+*   Creates the needed sqlite3 database. (if needed)
+
+*   Prompts you to create the initial superuser. (if needed)
+
+*   Uses the included CherryPy dev server to serve MWA2.
+
+
     
