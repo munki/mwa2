@@ -132,7 +132,7 @@ function initPkginfoTable() {
         },
         columnDefs: [
          { "targets": 0,
-            "width": "60%",
+            //"width": "60%",
             "render": render_name,
          },
          {
