@@ -8,7 +8,7 @@ from django.http import Http404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 
-from models import Pkginfo, PKGSINFO_STATUS_TAG
+from models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
 from process.models import Process
 
 import json
@@ -75,12 +75,22 @@ def detail(request, pkginfo_path):
                 if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
                     raise PermissionDenied
                 json_data = json.loads(request.body)
-                Pkginfo.delete(
-                    pkginfo_path, request.user,
-                    delete_pkg=json_data.get('deletePkg', False)
-                )
-                return HttpResponse(
-                    json.dumps('success'), content_type='application/json')
+                try:
+                    Pkginfo.delete(
+                        pkginfo_path, request.user,
+                        delete_pkg=json_data.get('deletePkg', False)
+                    )
+                except PkginfoError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
+                else:
+                    return HttpResponse(
+                        json.dumps({'result': 'success'}),
+                        content_type='application/json')
+
         # regular POST (update/change)
         print "Got write request for %s" % pkginfo_path
         if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
@@ -89,8 +99,17 @@ def detail(request, pkginfo_path):
             json_data = json.loads(request.body)
             if json_data and 'plist_data' in json_data:
                 plist_data = json_data['plist_data'].encode('utf-8')
-                Pkginfo.write(
-                    json_data['plist_data'], pkginfo_path, request.user)
-                return HttpResponse(
-                    json.dumps('success'), content_type='application/json')
+                try:
+                    Pkginfo.write(
+                        json_data['plist_data'], pkginfo_path, request.user)
+                except PkginfoError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
+                else:
+                    return HttpResponse(
+                        json.dumps({'result': 'success'}),
+                        content_type='application/json')
 

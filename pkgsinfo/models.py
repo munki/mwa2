@@ -51,6 +51,31 @@ def record(message=None, percent_done=None):
         PKGSINFO_STATUS_TAG, message=message, percent_done=percent_done)
 
 
+class PkginfoError(Exception):
+    '''Class for Pkginfo errors'''
+    pass
+
+
+class PkginfoReadError(PkginfoError):
+    '''Error reading a Pkginfo'''
+    pass
+
+
+class PkginfoWriteError(PkginfoError):
+    '''Error writing a Pkginfo'''
+    pass
+
+
+class PkginfoDeleteError(PkginfoError):
+    '''Error deleting a Pkginfo'''
+    pass
+
+
+class PkginfoDoesNotExistError(PkginfoError):
+    '''Error when Pkginfo doesn't exist at pathname'''
+    pass
+
+
 class PkginfoFile(models.Model):
     '''Placeholder so we get permissions entries in the admin database'''
     pass
@@ -171,8 +196,7 @@ class Pkginfo(object):
             if GIT:
                 MunkiGit().addFileAtPathForCommitter(filepath, user)
         except Exception, err:
-            # Better handle this!
-            raise
+            raise PkginfoWriteError(err)
 
     @classmethod
     def delete(cls, pathname, user, delete_pkg=False):
@@ -189,12 +213,11 @@ class Pkginfo(object):
                     if os.path.exists(pkg_path):
                         os.unlink(pkg_path)
             except Exception, err:
-                raise
+                raise PkginfoDeleteError(err)
         try:
             os.unlink(filepath)
             if GIT:
                 MunkiGit().deleteFileAtPathForCommitter(
                     filepath, user)
         except Exception, err:
-            # Better handle this!
-            raise
+            raise PkginfoDeleteError(err)

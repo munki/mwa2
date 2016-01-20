@@ -499,14 +499,20 @@ function savePkginfoItem() {
       data: postdata,
       timeout: 10000,
       success: function(data) {
-        hideSaveOrCancelBtns();
-        rebuildCatalogs();
-        if (requested_pathname.length) {
-            getPkginfoItem(requested_pathname);
-        } else {
-            // refresh our list
-            $('#list_items').DataTable().ajax.reload();
-        }
+          if (data['result'] == 'failed') {
+                $("#errorModalTitleText").text("Pkginfo write error");
+                $("#errorModalDetailText").text(data['detail']);
+                $("#errorModal").modal("show");
+                return;
+            }
+            hideSaveOrCancelBtns();
+            rebuildCatalogs();
+            if (requested_pathname.length) {
+                getPkginfoItem(requested_pathname);
+            } else {
+                // refresh our list
+                $('#list_items').DataTable().ajax.reload();
+            }
       },
       error: function(jqXHR, textStatus, errorThrown) {
         alert("ERROR: " + textStatus + "\n" + errorThrown);
@@ -526,6 +532,12 @@ function deletePkginfoItem() {
       data: JSON.stringify({'deletePkg': deletePkg}),
       headers: {'X_METHODOVERRIDE': 'DELETE'},
       success: function(data) {
+          if (data['result'] == 'failed') {
+                $("#errorModalTitleText").text("Pkginfo delete error");
+                $("#errorModalDetailText").text(data['detail']);
+                $("#errorModal").modal("show");
+                return;
+          }
           rebuildCatalogs();
           window.location.hash = '';
           $('#pkginfo_item_detail').html('');
