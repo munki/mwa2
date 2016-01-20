@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django import forms
 
-from models import Manifest, MANIFEST_LIST_STATUS_TAG
+from models import Manifest, ManifestError, MANIFEST_LIST_STATUS_TAG
 from catalogs.models import Catalog
 from process.models import Process
 
@@ -67,9 +67,18 @@ def detail(request, manifest_path):
                 print "Got delete request for %s" % manifest_path
                 if not request.user.has_perm('manifest.delete_manifestfile'):
                     raise PermissionDenied
-                Manifest.delete(manifest_path, request.user)
-                return HttpResponse(
-                    json.dumps('success'), content_type='application/json')
+                try:
+                    Manifest.delete(manifest_path, request.user)
+                except ManifestError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
+                else:
+                    return HttpResponse(
+                        json.dumps({'result': 'success'}),
+                        content_type='application/json')
             elif http_method.lower() == 'put':
                 # regular POST (update/change)
                 print "Got write request for %s" % manifest_path
@@ -79,12 +88,20 @@ def detail(request, manifest_path):
                     json_data = json.loads(request.body)
                     if json_data and 'plist_data' in json_data:
                         plist_data = json_data['plist_data'].encode('utf-8')
-                        Manifest.write(
-                            json_data['plist_data'], manifest_path,
-                            request.user)
-                        return HttpResponse(
-                            json.dumps('success'),
-                            content_type='application/json')
+                        try:
+                            Manifest.write(
+                                json_data['plist_data'], manifest_path,
+                                request.user)
+                        except ManifestError, err:
+                            return HttpResponse(
+                                json.dumps({'result': 'failed',
+                                            'exception_type': str(type(err)),
+                                            'detail': str(err)}),
+                                content_type='application/json')
+                        else:
+                            return HttpResponse(
+                                json.dumps({'result': 'success'}),
+                                content_type='application/json')
             else:
                 print "Got unknown HTTP_X_METHODOVERRIDE for %s: %s" % (
                     manifest_path, http_method)
@@ -97,11 +114,25 @@ def detail(request, manifest_path):
                 json_data = None
             if json_data and 'plist_data' in json_data:
                 plist_data = json_data['plist_data'].encode('utf-8')
-                Manifest.write(
-                    json_data['plist_data'], manifest_path,
-                    request.user)
+                try:
+                    Manifest.write(
+                        json_data['plist_data'], manifest_path,
+                        request.user)
+                except ManifestError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
             else:
-                plist_data = Manifest.new(manifest_path, request.user)
+                try:
+                    plist_data = Manifest.new(manifest_path, request.user)
+                except ManifestError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
             c = {'plist_text': plist_data,
                  'pathname': manifest_path,}
             return render(request, 'manifests/detail.html', context=c)

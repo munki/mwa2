@@ -468,23 +468,35 @@ function duplicateManifestItem() {
     var postdata = JSON.stringify({'plist_data': plist_data})
 
     $.ajax({
-      method: 'POST',
-      url: manifestItemURL,
-      data: postdata,
-      timeout: 10000,
-      cache: false,
-      success: function(data) {
-          $('#list_items').DataTable().ajax.reload();
-          getManifestItem(pathname);
-          window.location.hash = pathname;
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
-        $('#manifest_detail').html("")
-        current_pathname = "";
-        requested_pathname = "";
-      },
-      dataType: 'html'
+        method: 'POST',
+        url: manifestItemURL,
+        data: postdata,
+        timeout: 10000,
+        cache: false,
+        success: function(data) {
+            try {
+                json_data = $.parseJSON(data);
+                // it's JSON, and therefore there was an issue
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalTitleText").text("Manifest creation error");
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
+                // not JSON; it's HTML
+                $('#list_items').DataTable().ajax.reload();
+                getManifestItem(pathname);
+                window.location.hash = pathname;
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            alert("ERROR: " + textStatus + "\n" + errorThrown);
+            $('#manifest_detail').html("")
+            current_pathname = "";
+            requested_pathname = "";
+        },
+        dataType: 'html'
     });
 }
 
@@ -500,6 +512,12 @@ function saveManifestItem() {
       data: postdata,
       timeout: 10000,
       success: function(data) {
+        if (data['result'] == 'failed') {
+            $("#errorModalTitleText").text("Manifest save error");
+            $("#errorModalDetailText").text(data['detail']);
+            $("#errorModal").modal("show");
+            return;
+        }
         hideSaveOrCancelBtns();
         if (requested_pathname.length) {
             getManifestItem(requested_pathname);
@@ -543,13 +561,25 @@ function newManifestItem() {
       timeout: 10000,
       cache: false,
       success: function(data) {
-          $('#manifest_detail').html(data);
-            val = $('#plist').text();
-            try { js_obj = PlistParser.parse(val); }
-            catch (e) {
-                  //alert('Error in parsing plist. ' + e);
+          try {
+              json_data = $.parseJSON(data);
+              // it's JSON, and therefore there was an issue
+              if (json_data['result'] == 'failed') {
+                    $("#errorModalTitleText").text("Manifest creation error");
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+              }
+          } catch(err) {
+              // not JSON; it's HTML
+              $('#manifest_detail').html(data);
+              val = $('#plist').text();
+              try { js_obj = PlistParser.parse(val); }
+              catch (err) {
+                  //alert('Error in parsing plist. ' + err);
                   js_obj = null;
-            }
+              }
+          }
           editor = initializeAceEditor('plist', plistChanged);
           $('#editortabs a[href="' + selected_tab_viewname + '"]').tab('show');
           setupView(selected_tab_viewname);
@@ -577,9 +607,15 @@ function deleteManifestItem() {
       data: '',
       headers: {'X_METHODOVERRIDE': 'DELETE'},
       success: function(data) {
-        window.location.hash = '';
-        $('#manifest_detail').html('');
-        $('#list_items').DataTable().ajax.reload();
+          if (data['result'] == 'failed') {
+              $("#errorModalTitleText").text("Manifest delete error");
+              $("#errorModalDetailText").text(data['detail']);
+              $("#errorModal").modal("show");
+              return;
+          }
+          window.location.hash = '';
+          $('#manifest_detail').html('');
+          $('#list_items').DataTable().ajax.reload();
       },
       error: function(jqXHR, textStatus, errorThrown) {
         alert("ERROR: " + textStatus + "\n" + errorThrown);
