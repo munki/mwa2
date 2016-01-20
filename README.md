@@ -48,6 +48,7 @@ MunkiWebAdmin2 makes use of the following open source components:
 *   jQuery (version 1.11.3 included) - http://jquery.com
 *   JQuery-UI (version 1.11.4 included) - http://jqueryui.com
 *   Bootstrap (version 3.3.6 included) - http://getbootstrap.com
+*   Bootstrap itself includes Glyphicons - http://glyphicons.com
 *   DataTables (version 1.10.10 included) - http://datatables.net
 *   Ace - (version as of 06 Jan 2016 included) - https://ace.c9.io/ 
 *   The GUI plist editor was inspired by and borrows code from Davis Durman's FlexiJsonEditor - https://github.com/DavidDurman/FlexiJsonEditor
