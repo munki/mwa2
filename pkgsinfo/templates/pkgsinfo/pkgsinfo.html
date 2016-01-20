@@ -92,16 +92,19 @@ Bootstrap modal for errors
 <div class="modal fade" data-backdrop="static" id="errorModal">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header alert-danger">
-        <h4 class="modal-title" id="errorModalTitleText">Error</h4>
+      <div class="modal-header">
+        <h4 class="modal-title text-danger">
+            <span class="glyphicon glyphicon-alert text-danger" aria-hidden="true"></span>
+            <span id="errorModalTitleText">Error</span>
+        </h4>
       </div>
       <div class="modal-body">
         <form>
-          <p id="errorModalDetailText">Error detail goes here</p>
+          <p id="errorModalDetailText">An unexpected error occurred.</p>
         </form>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+          <button type="button" class="btn btn-danger" data-dismiss="modal">OK</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
