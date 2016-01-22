@@ -9,9 +9,11 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 
 from models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
+from catalogs.models import Catalog
 from process.models import Process
 
 import json
+import plistlib
 import sys
 
 
@@ -63,8 +65,14 @@ def detail(request, pkginfo_path):
         pkginfo = Pkginfo.read(pkginfo_path)
         if pkginfo is None:
             raise Http404("%s does not exist" % pkginfo_path)
+        try:
+            pkginfo_plist = plistlib.readPlistFromString(pkginfo)
+            installer_item_path = pkginfo_plist.get('installer_item_location', '')
+        except Exception:
+            installer_item_path = ''
         c = {'plist_text': pkginfo,
-             'pathname': pkginfo_path}
+             'pathname': pkginfo_path,
+             'installer_item_path': installer_item_path}
         return render(request, 'pkgsinfo/detail.html', context=c)
     if request.method == 'POST':
         # DELETE

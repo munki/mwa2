@@ -338,6 +338,8 @@ var js_obj = {};
 
 var selected_tab_viewname = "#basicstab";
 
+// these should be moved into their own file maybe so they can be edited
+// seperately
 var key_list = {'name': 'Name', 
                 'version': 'Version', 
                 'display_name': 'Display name', 
@@ -348,6 +350,8 @@ var key_list = {'name': 'Name',
                 'unattended_install': 'Unattended install',
                 'unattended_uninstall': 'Unattended uninstall'};
 
+// these should be moved into their own file maybe so they can be edited
+// seperately
 var keys_and_types = {'apple_item': true,
                       'autoremove': true,
                       'blocking_applications': ['appname'],
@@ -504,8 +508,8 @@ function monitor_pkgsinfo_list() {
 
 
 function savePkginfoItem() {
+    // save pkginfo item back to the repo
     $('.modal-backdrop').remove();
-    //var plist_data = $('#plist').val();
     var plist_data = editor.getValue();
     var postdata = JSON.stringify({'plist_data': plist_data});
     var pkginfoItemURL = '/pkgsinfo/' + current_pathname;
@@ -538,7 +542,48 @@ function savePkginfoItem() {
 }
 
 
+function showDeleteConfirmationModal() {
+    var installer_item_path = $('#pathname').data('installer-item-path');
+    if (installer_item_path) {
+        // we need to check to see how many pkginfo items reference this
+        // installer item path; if more than one we should not offer to
+        // delete the installer_item as well
+        // most items should have a single reference, so we'll start 
+        // with the checkbox visible, but disabled
+        // (checkbox is hidden by default so it's not shown when an item
+        //  doesn't have an associated installer_item, like
+        //  apple_update_metadata or nopkg items)
+        // TO-DO: offer to remove associated uninstaller items
+        $('#deleteConfirmationModalInstallerItem').removeClass('hidden');
+        $('#delete_pkg').attr('disabled', true);
+        // ask the server for the count of references for the installer item
+        $.ajax({
+          type: 'GET',
+          url: '/catalogs/get_pkg_ref_count/' + installer_item_path,
+          timeout: 10000,
+          cache: false,
+          success: function(data) {
+              if (data == 1) {
+                  // a single reference! we can enable the checkbox
+                  $('#delete_pkg').removeAttr("disabled");
+              } else {
+                  // multiple references! hide the checkbox
+                  $('#deleteConfirmationModalInstallerItem').addClass('hidden');
+              }
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            // do nothing currently, which leaves the checkbox
+            // visible but disabled. Better safe than sorry
+          },
+          dataType: 'json'
+        });
+    }
+    // show the deletion confirmation dialog
+    $("#deleteConfirmationModal").modal("show");
+}
+
 function deletePkginfoItem() {
+    // do the actual pkginfo item deletion
     $('.modal-backdrop').remove();
     var pkginfoItemURL = '/pkgsinfo/' + current_pathname;
     var deletePkg = $('#delete_pkg').is(':checked');

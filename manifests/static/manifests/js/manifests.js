@@ -162,6 +162,8 @@ function saveChangesAndLoadNext() {
 
 var js_obj = {};
 
+// these should be moved into their own file maybe so they can be edited
+// seperately
 var key_list = {'catalogs': 'Catalogs',
                 'included_manifests': 'Included Manifests',
                 'managed_installs': 'Managed Installs',
@@ -170,6 +172,8 @@ var key_list = {'catalogs': 'Catalogs',
                 'optional_installs': 'Optional Installs',
                 };
 
+// these should be moved into their own file maybe so they can be edited
+// seperately
 var keys_and_types = {'catalogs': ['catalogname'],
                       'conditional_items': [{'condition': 'os_vers_minor > 9',
                                              'managed_installs': ['itemname']}],

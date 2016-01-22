@@ -144,8 +144,6 @@ class Catalog(object):
         if catalog_items:
             matches = [item for item in catalog_items
                        if item.get('installer_item_location') == pkg_path]
-            for match in matches:
-                print "%s--%s" % (match.get('name'), match.get('version'))
             matching_count = len(matches)
         return matching_count
                      

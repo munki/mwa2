@@ -1,7 +1,7 @@
-<h4>{{ pathname }}</h4>
+<h4 id='pathname' data-installer-item-path='{{ installer_item_path }}'>{{ pathname }}</h4>
 {% if perms.pkgsinfo.delete_pkginfofile %}
 <div class='pull-right' id='delete_btn'>
-    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteConfirmationModal">Delete</button>
+    <button type="button" class="btn btn-danger" onClick="showDeleteConfirmationModal()">Delete</button>
 </div>
 {% endif %}
 {% if perms.pkgsinfo.change_pkginfofile %}
@@ -53,13 +53,15 @@ Bootstrap modal for confirming pkginfo deletion
       <div class="modal-body">
         <p>Really delete <strong>{{ pathname }}</strong>?</p>
         <p>This action cannot be undone.</p>
-        <div class="checkbox pull-right" id="deleteConfirmationModalInstallerItem">
-            <label>
-                <input type="checkbox" id="delete_pkg">
-                Also delete installer item
-            </label>
+        <div id="deleteConfirmationModalInstallerItem" class='hidden'>
+            <div class="checkbox pull-right">
+                <label>
+                    <input type="checkbox" id="delete_pkg">
+                    Also delete installer item
+                </label>
+            </div>
+            <br>
         </div>
-        <br>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-dismiss="modal" onClick="deletePkginfoItem()">Delete</button>
