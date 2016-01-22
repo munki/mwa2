@@ -64,6 +64,8 @@ function getCatalogData() {
           // jQuery doesn't actually update the DOM; in order that we
           // can see what's going on, we'll also update the DOM item
           $('#data_storage').attr('data-catalog_data', data);
+          // update the catalog dropdown list (if it exists)
+          $('#catalog_dropdown_list').triggerHandler('custom.update');
       },
     });
 }

@@ -46,8 +46,25 @@ class Catalog(object):
             else:
                 catalogs.append(name)
         return catalogs
-            
-    
+
+    @classmethod
+    def next_catalog_contents(self):
+        '''Generator that returns the next catalog name and its contents'''
+        catalogs_path = os.path.join(REPO_DIR, 'catalogs')
+        catalogs = []
+        for name in os.listdir(catalogs_path):
+            if name.startswith("._") or name == ".DS_Store" or name == 'all':
+                # don't process these
+                continue
+            try:
+                catalog = plistlib.readPlist(
+                    os.path.join(catalogs_path, name))
+            except Exception:
+                # skip items that aren't valid plists
+                pass
+            else:
+                yield (name, catalog)
+
     @classmethod
     def detail(self, catalog_name):
         '''Gets the contents of a catalog, which is a list
@@ -57,34 +74,14 @@ class Catalog(object):
         if os.path.exists(catalog_path):
             try:
                 catalog_items = plistlib.readPlist(catalog_path)
-                index = 0
-                for item in catalog_items:
-                    item['index'] = index
-                    index += 1
                 return catalog_items
             except Exception, errmsg:
                 return None
         else:
             return None
 
-
     @classmethod
-    def item_detail(self, catalog_name, item_index):
-        '''Returns detail for a single catalog item'''
-        catalog_path = os.path.join(
-            REPO_DIR, 'catalogs', catalog_name)
-        if os.path.exists(catalog_path):
-            try:
-                catalog_items = plistlib.readPlist(catalog_path)
-                return catalog_items[int(item_index)]
-            except Exception, errmsg:
-                return None
-        else:
-            return None
-
-
-    @classmethod
-    def getValidInstallItems(self, catalog_list):
+    def DEFUNCTgetValidInstallItems(self, catalog_list):
         '''Returns a list of valid install item names for the
         list of catalogs'''
         install_items = set()
@@ -106,12 +103,10 @@ class Catalog(object):
         catalog_info = {}
         categories_set = set()
         developers_set = set()
-        catalog_list = Catalog.list()
-        for catalog in catalog_list:
+        for catalog, catalog_items in cls.next_catalog_contents():
             suggested_set = set()
             update_set = set()
             versioned_set = set()
-            catalog_items = Catalog.detail(catalog)
             if catalog_items:
                 suggested_names = list(set(
                     [item['name'] for item in catalog_items
@@ -136,6 +131,21 @@ class Catalog(object):
                 developers_set.update(
                     {item['developer'] for item in catalog_items
                      if item.get('developer')})
-        catalog_info['_categories'] = list(categories_set)
-        catalog_info['_developers'] = list(developers_set)
+        catalog_info['._categories'] = list(categories_set)
+        catalog_info['._developers'] = list(developers_set)
         return catalog_info
+
+    @classmethod
+    def get_pkg_ref_count(self, pkg_path):
+        '''Returns the number of pkginfo items containing a reference to
+        pkg_path'''
+        matching_count = 0
+        catalog_items = Catalog.detail('all')
+        if catalog_items:
+            matches = [item for item in catalog_items
+                       if item.get('installer_item_location') == pkg_path]
+            for match in matches:
+                print "%s--%s" % (match.get('name'), match.get('version'))
+            matching_count = len(matches)
+        return matching_count
+                     

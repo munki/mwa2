@@ -13,11 +13,14 @@ $(document).ready(function() {
     if (hash.length > 1) {
         getPkginfoItem(hash.slice(1));
     }
-    getCatalogNames();
+    //getCatalogNames();
     getCatalogData();
-    searchField = $('#listSearchField');
-    searchField.focus();
+    $('#listSearchField').focus();
     do_resize();
+    // register an event handler to trigger when we get our catalog data
+    $('#catalog_dropdown_list').on('custom.update', function () {
+        update_catalog_dropdown_list();
+    })
 } );
 
 
@@ -31,7 +34,7 @@ function select_catalog(name) {
 
 
 function update_catalog_dropdown_list() {
-    var catalog_list = $('#data_storage').data('catalog_names');
+    var catalog_list = getValidCatalogNames();
     var list_html = '<li><a href="#" onClick="select_catalog(\'all\')">all</a></li>\n';
     for (var i=0; i < catalog_list.length; i++) {
         list_html += '<li><a href="#" onClick="select_catalog(\''+ catalog_list[i] + '\')">' + catalog_list[i] + '</a></li>\n';
@@ -40,7 +43,7 @@ function update_catalog_dropdown_list() {
 }
 
 
-function getCatalogNames() {
+function DEFUNCTgetCatalogNames() {
     var catalogListURL = '/catalogs/';
     $.ajax({
       method: 'GET',
@@ -58,6 +61,19 @@ function getCatalogNames() {
     });
 }
 
+
+function getValidCatalogNames() {
+    // return a list of valid catalog names, which are the keys to the
+    // catalog_data object minus those keys that start with "._"
+    var data = $('#data_storage').data('catalog_data');
+    if (data) {
+        var raw_names = Object.keys(data);
+        // in Python this would be
+        // return [item for item in raw_names if not item.startswith('._')]
+        return raw_names.filter(function(x){return (x.substring(0, 2) != "._")})
+    }
+    return [];
+}
 
 function getValidInstallItems() {
     // return a list of valid install item names
@@ -419,7 +435,7 @@ function setupTypeahead() {
         });
     $('div.plist-editor input.property').typeahead({source: keys_to_suggest});
     $('tr[data-path="catalogs"] textarea.value.form-control').typeahead({source: function(query, process) {
-            return process($('#data_storage').data('catalog_names'));
+            return process(getValidCatalogNames());
         }
     });
     $('tr[data-path="requires"] textarea.value.form-control').typeahead({source: function(query, process) {
@@ -444,7 +460,7 @@ function setupTypeahead() {
 function getCategories() {
     var data = $('#data_storage').data('catalog_data');
     if (data) {
-        if (data.hasOwnProperty('_categories')) return data['_categories'];
+        if (data.hasOwnProperty('._categories')) return data['._categories'];
     }
     return [];
 }
@@ -453,7 +469,7 @@ function getCategories() {
 function getDevelopers() {
     var data = $('#data_storage').data('catalog_data');
     if (data) {
-        if (data.hasOwnProperty('_developers')) return data['_developers'];
+        if (data.hasOwnProperty('._developers')) return data['._developers'];
     }
     return [];
 }

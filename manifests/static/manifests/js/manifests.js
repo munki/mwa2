@@ -13,7 +13,7 @@ $(document).ready(function() {
     if (hash.length > 1) {
         getManifestItem(hash.slice(1));
     }
-    getCatalogNames();
+    //getCatalogNames();
     getCatalogData();
     $('#listSearchField').focus();
     do_resize();
@@ -59,7 +59,7 @@ $(document).ready(function() {
 
 } );
 
-function getCatalogNames() {
+function DEFUNCTgetCatalogNames() {
     var catalogListURL = '/catalogs/';
     $.ajax({
       method: 'GET',
@@ -215,6 +215,20 @@ function getSuggestedItems() {
 }
 
 
+function getValidCatalogNames() {
+    // return a list of valid catalog names, which are the keys to the
+    // catalog_data object minus those keys that start with "._"
+    var data = $('#data_storage').data('catalog_data');
+    if (data) {
+        var raw_names = Object.keys(data);
+        // in Python this would be
+        // return [item for item in raw_names if not item.startswith('._')]
+        return raw_names.filter(function(x){return (x.substring(0, 2) != "._")})
+    }
+    return [];
+}
+
+
 function getValidInstallItems() {
     // return a list of item names based on current manifest catalog list
     var data = $('#data_storage').data('catalog_data');
@@ -283,7 +297,8 @@ function setupTypeaheadForPropertyNames() {
 function setupTypeahead() {
     // setup typeahead/autocomplete for various fields
     $('tr[data-path="catalogs"] textarea.value').typeahead({source: function(query, process) {
-            return process($('#data_storage').data('catalog_names'));
+            //return process($('#data_storage').data('catalog_names'));
+            return process(getValidCatalogNames());
         }
     });
     $('tr[data-path="included_manifests"] textarea.value').typeahead({source: function(query, process) {
