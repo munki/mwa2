@@ -7,6 +7,7 @@
 <script type='text/javascript'>
 $(document).ready(function() {
     $('#loginModal').modal('show');
+    $('#login_username_field').find('input').select();
 });
 </script>
 {% endif %}
@@ -33,7 +34,7 @@ Bootstrap modal
               </div>
           {% endif %}
           {% csrf_token %}
-          <div class="form-group">
+          <div class="form-group" id='login_username_field'>
               {{ form.username.label_tag }}
               {{ form.username|addcss:'form-control' }}
           </div>
