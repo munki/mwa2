@@ -6,8 +6,10 @@
 {% if not user.is_authenticated %}
 <script type='text/javascript'>
 $(document).ready(function() {
+    $('#loginModal').on('shown.bs.modal', function () {
+        $('#login_username_field').find('input').focus();
+    })
     $('#loginModal').modal('show');
-    $('#login_username_field').find('input').select();
 });
 </script>
 {% endif %}
