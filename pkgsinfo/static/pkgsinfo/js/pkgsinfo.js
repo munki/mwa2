@@ -3,6 +3,7 @@ function do_resize() {
     //ace editor is dumb and needs the height specifically as well
     $('#plist').height($(window).height() - 180);
     $('#item_list').height($(window).height() - 100);
+    $('.dataTables_scrollBody').height($(window).height() - 180);
 }
 
 $(window).resize(do_resize);
@@ -158,7 +159,7 @@ function initPkginfoTable() {
           }],
          "sDom": "<t>",
          "bPaginate": false,
-         "scrollY": "1280px",
+         "scrollY": "80vh",
          "bInfo": false,
          "bFilter": true,
          "bStateSave": false,

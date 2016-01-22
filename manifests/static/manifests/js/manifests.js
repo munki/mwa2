@@ -3,6 +3,8 @@ function do_resize() {
     //ace editor is dumb and needs the height specifically as well
     $('#plist').height($(window).height() - 180);
     $('#item_list').height($(window).height() - 100);
+    $('.dataTables_scrollBody').height($(window).height() - 180);
+    //$('#list_items').DataTable().draw();
 }
 
 $(window).resize(do_resize);
@@ -111,7 +113,7 @@ function initManifestsTable() {
           }],
          "sDom": "<t>",
          "bPaginate": false,
-         "scrollY": "1280px",
+         "scrollY": '80vh',
          //"bScrollCollapse": true,
          "bInfo": false,
          "bFilter": true,
