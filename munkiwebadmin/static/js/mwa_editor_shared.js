@@ -77,6 +77,7 @@ function initializeAceEditor(element_id, change_fn) {
     editor.getSession().setMode("ace/mode/xml");
     editor.setShowPrintMargin(false);
     editor.getSession().setUseWrapMode(true);
+    editor.getSession().getDocument().setNewLineMode('unix');
     editor.resize(true);
     editor.getSession().on('change', change_fn);
     return editor
