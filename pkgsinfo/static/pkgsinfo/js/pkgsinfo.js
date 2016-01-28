@@ -156,6 +156,7 @@ function initPkginfoTable() {
             "targets": 1,
             "render": render_versions,
             "searchable": false,
+            "orderable": false,
           }],
          "sDom": "<t>",
          "bPaginate": false,
