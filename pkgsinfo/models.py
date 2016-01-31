@@ -254,6 +254,8 @@ class Pkginfo(object):
         errors = []
         catalog_items = []
         if delete_pkg:
+            # cache the catalog_items once; we don't want to incur the
+            # overhead of reading the 'all' catalog multiple times
             catalog_items = Catalog.detail('all')
         
         for pathname in pathname_list:
@@ -264,7 +266,6 @@ class Pkginfo(object):
             else:
                 delete_this_pkg = False
             try:
-                #print "Would delete %s, deleting pkg: %s" % (pathname, delete_this_pkg)
                 cls.delete(pathname, user, delete_this_pkg)
             except Exception, err:
                 errors.append('Error %s when removing %s' % (err, pathname))
