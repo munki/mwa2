@@ -58,9 +58,7 @@ def index(request):
                 if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
                     raise PermissionDenied
                 json_data = json.loads(request.body)
-                pkginfo_list = json_data.get('pkginfo_list')
-                if pkginfo_list:
-                    print "  Items to delete: %s" % ', '.join(pkginfo_list)
+                pkginfo_list = json_data.get('pkginfo_list', [])
                 try:
                     Pkginfo.mass_delete(
                         pkginfo_list, request.user,
@@ -76,6 +74,29 @@ def index(request):
                     return HttpResponse(
                         json.dumps({'result': 'success'}),
                         content_type='application/json')
+        # regular POST (update/change)
+        print "Got mass update request for pkginfos"
+        if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
+            raise PermissionDenied
+        json_data = json.loads(request.body)
+        pkginfo_list = json_data.get('pkginfo_list', [])
+        catalogs_to_add = json_data.get('catalogs_to_add', [])
+        catalogs_to_delete = json_data.get('catalogs_to_delete', [])
+        try:
+            Pkginfo.mass_edit_catalogs(
+                pkginfo_list, catalogs_to_add, catalogs_to_delete,
+                request.user)
+        except PkginfoError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json')
+        else:
+            return HttpResponse(
+                json.dumps({'result': 'success'}),
+                content_type='application/json')
+        
 
 @login_required
 def list(request):

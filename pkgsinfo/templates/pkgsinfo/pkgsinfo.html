@@ -81,6 +81,47 @@
 <!-- data storage -->
 <div id="data_storage"/>
 <!--
+Bootstrap modal for mass editing pkginfo items
+-->
+<div class="modal fade" id="massEditModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Edit catalogs for selected items</h4>
+      </div>
+      <div class="modal-body">
+          <p id="massEditModalBodyText">Edit catalogs for the selected pkginfo items:</p>
+          <div class="row">
+               <div class="col-md-6">
+                   <div class="form-group">
+                        <label for="catalogs_to_add">Add:</label>
+                        <select multiple class="form-control" id='catalogs_to_add'>
+                          <option>development</option>
+                          <option>production</option>
+                          <option>testing</option>
+                        </select>
+                   </div>
+              </div>
+              <div class="col-md-6">
+                  <div class="form-group">
+                       <label for="catalogs_to_delete">Remove:</label>
+                       <select multiple class="form-control" id='catalogs_to_delete'>
+                         <option>development</option>
+                         <option>production</option>
+                         <option>testing</option>
+                       </select>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onClick="massEditCatalogs()">Change</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!--
 Bootstrap modal for confirming mass pkginfo deletion
 -->
 <div class="modal fade" id="massDeleteConfirmationModal">
@@ -106,7 +147,8 @@ Bootstrap modal for confirming mass pkginfo deletion
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
-</div><!-- /.modal --><!--
+</div><!-- /.modal -->
+<!--
 Bootstrap modal for showing process progress
 -->
 <div class="modal fade" data-backdrop="static" id="process_progress">

@@ -24,6 +24,7 @@ $(document).ready(function() {
     })
     $('#mass_delete').on('click', confirmMassDelete);
     $('#massaction_dropdown').on('click', enableMassActionMenuItems);
+    $('#mass_edit_catalogs').on('click', openMassEditModal);
 } );
 
 
@@ -43,6 +44,18 @@ function update_catalog_dropdown_list() {
         list_html += '<li><a href="#" onClick="select_catalog(\''+ catalog_list[i] + '\')">' + catalog_list[i] + '</a></li>\n';
     }
     $('#catalog_dropdown_list').html(list_html);
+}
+
+
+function update_catalog_edit_list() {
+    var catalog_list = getValidCatalogNames();
+    $('#catalogs_to_add').empty();
+    $('#catalogs_to_delete').empty();
+    for (var i=0; i < catalog_list.length; i++) {
+        var option = $('<option/>').attr("value", catalog_list[i]).text(catalog_list[i]);
+        $('#catalogs_to_add').append(option);
+        $('#catalogs_to_delete').append(option.clone());
+    }
 }
 
 
@@ -128,6 +141,16 @@ var confirmMassDelete = function() {
         }
         // show the deletion confirmation dialog
         $("#massDeleteConfirmationModal").modal("show");
+    }
+}
+
+
+var openMassEditModal = function() {
+    selected_item_count = get_checked_items().length
+    if (selected_item_count > 0) {
+        update_catalog_edit_list();
+        // show the deletion confirmation dialog
+        $("#massEditModal").modal("show");
     }
 }
 
@@ -605,7 +628,43 @@ function showDeleteConfirmationModal() {
     $("#deleteConfirmationModal").modal("show");
 }
 
-function deletePkginfoList(pkginfo_list, also_delete_pkg) {
+
+function massEditCatalogs() {
+    var pkginfo_list = get_checked_items();
+    var catalogs_to_add = ($("#catalogs_to_add").val() || []);
+    var catalogs_to_delete = ($("#catalogs_to_delete").val() || []);
+    //alert(catalogs_to_add);
+    //alert(catalogs_to_delete);
+    //return;
+    $.ajax({
+      type: 'POST',
+      url: '/pkgsinfo/',
+      data: JSON.stringify({'pkginfo_list': pkginfo_list,
+                            'catalogs_to_add': catalogs_to_add,
+                            'catalogs_to_delete': catalogs_to_delete}),
+      success: function(data) {
+          if (data['result'] == 'failed') {
+                $("#errorModalTitleText").text("Pkginfo delete error");
+                $("#errorModalDetailText").text(data['detail']);
+                $("#errorModal").modal("show");
+                return;
+          }
+          rebuildCatalogs();
+          window.location.hash = '';
+          $('#pkginfo_item_detail').html('');
+          $('#list_items').DataTable().ajax.reload();
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("ERROR: " + textStatus + "\n" + errorThrown);
+      },
+      dataType: 'json'
+    });
+}
+
+
+
+
+function deletePkginfoList() {
     var pkginfo_list = get_checked_items();
     var deletePkg = $('#mass_delete_pkg').is(':checked');
     $.ajax({

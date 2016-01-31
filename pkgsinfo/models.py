@@ -268,6 +268,54 @@ class Pkginfo(object):
                 cls.delete(pathname, user, delete_this_pkg)
             except Exception, err:
                 errors.append('Error %s when removing %s' % (err, pathname))
+
         if errors:
             raise PkginfoDeleteError(errors)
 
+    @classmethod
+    def mass_edit_catalogs(
+        cls, pathname_list, catalogs_to_add, catalogs_to_remove, user):
+        '''For all pkginfo items in the list, add and remove catalogs'''
+
+        errors = []
+        # normalize the catalog lists -- no duplicates; eliminate
+        # any items that are in both lists
+        normalized_catalogs_to_add = (
+            set(catalogs_to_add) - set(catalogs_to_remove))
+        normalized_catalogs_to_remove = (
+            set(catalogs_to_remove)- set(catalogs_to_add))
+        catalogs_to_add = list(normalized_catalogs_to_add)
+        catalogs_to_remove = list(normalized_catalogs_to_remove)
+
+        for pathname in pathname_list:
+            filepath = os.path.join(PKGSINFO_PATH, pathname)
+            try:
+                plistdata = plistlib.readPlist(filepath)
+            except:
+                errors.append('Could not read %s' % pathname)
+                continue
+            if not 'catalogs' in plistdata:
+                plistdata['catalogs'] = []
+            # what will be added?
+            new_catalogs = [item for item in catalogs_to_add 
+                            if item not in plistdata['catalogs']]
+            # what will be removed?
+            removed_catalogs = [item for item in catalogs_to_remove
+                                if item in plistdata['catalogs']]
+            if new_catalogs or removed_catalogs:
+                # add the new ones
+                plistdata['catalogs'].extend(new_catalogs)
+                # remove catalogs to remove
+                plistdata['catalogs'] = [item for item in plistdata['catalogs']
+                                         if item not in catalogs_to_remove]
+                try:
+                    plistlib.writePlist(plistdata, filepath)
+                    print "Updated %s" % pathname
+                    if GIT:
+                        MunkiGit().addFileAtPathForCommitter(filepath, user)
+                except Exception, err:
+                    errors.append('Error %s when updating %s' % (err, pathname))
+                    continue
+
+        if errors:
+            raise PkginfoWriteError(errors)
