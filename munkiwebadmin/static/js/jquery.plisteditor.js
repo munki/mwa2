@@ -273,7 +273,7 @@
                     var tableRow = $('<tr>', {'data-path': dataPath});
                     var rowHeader = $('<th>',
                                       {'scope': 'row',
-                                       'class': 'col-sm-3 col-md-3 col-lg-3'});
+                                       'class': 'col-xs-3 col-sm-3 col-md-3 col-lg-3'});
                     if (!opt.key_list) {
                         var keyElement = $('<input>',
                             {'class': 'property form-control'});

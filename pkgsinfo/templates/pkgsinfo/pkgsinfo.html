@@ -39,15 +39,29 @@
                     <input type="search" class="form-control" id="listSearchField" placeholder="Search" value="{{search}}">
                 </div>
             </div>
-            <div class="form-group pull-right">
-                  <div class="btn-group">
-                      <button type="button" id="catalog_dropdown" class="btn btn-default dropdown-toggle" data-value="{{catalog}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <div class="form-group">
+                <div class="btn-group">
+                      <button type="button" id="catalog_dropdown"
+                              class="btn btn-default dropdown-toggle" data-value="{{catalog}}" data-toggle="dropdown"
+                              aria-haspopup="true" aria-expanded="false">
                           {{catalog}} <span class="caret"></span>
                       </button>
-                      <ul class="dropdown-menu pull-right" id="catalog_dropdown_list">
+                      <ul class="dropdown-menu" id="catalog_dropdown_list">
                           <li><a href="#">all</a></li>
                       </ul>
                   </div>
+            </div>
+            <div class="form-group pull-right">
+              <div class="btn-group">
+                  <button type="button" id="massaction_dropdown"
+                          class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-cog" aria-hidden="true"></span> <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-right" id="massaction_dropdown_list">
+                      <li class="disabled"><a href="#" id="mass_delete">Delete items…</a></li>
+                      <li class="disabled"><a href="#" id="mass_edit_catalogs">Edit catalogs…</a></li>
+                  </ul>
+              </div>
             </div>
         </div>
         <table class="table table-striped table-condensed wraptext" id='list_items' style="width:100%">
@@ -67,6 +81,32 @@
 <!-- data storage -->
 <div id="data_storage"/>
 <!--
+Bootstrap modal for confirming mass pkginfo deletion
+-->
+<div class="modal fade" id="massDeleteConfirmationModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Delete selected pkginfo items?</h4>
+      </div>
+      <div class="modal-body">
+        <p id="massDeleteConfirmationModalBodyText">Really delete the selected pkginfo items?</p>
+        <p>This action cannot be undone.</p>
+        <div class="checkbox pull-right">
+            <label>
+                <input type="checkbox" id="mass_delete_pkg">
+                Also delete installer items
+            </label>
+        </div>
+        <br>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal" onClick="deletePkginfoList()">Delete</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal --><!--
 Bootstrap modal for showing process progress
 -->
 <div class="modal fade" data-backdrop="static" id="process_progress">

@@ -43,12 +43,39 @@ def getjson(request):
 
 @login_required
 def index(request):
-    print "Got index request for pkgsinfo"
-    c = {'page': 'pkgsinfo',
-         'search': request.GET.get('search', ''),
-         'catalog': request.GET.get('catalog', 'all')}
-    return render(request, 'pkgsinfo/pkgsinfo.html', context=c)
-
+    if request.method == "GET":
+        print "Got index request for pkgsinfo"
+        c = {'page': 'pkgsinfo',
+             'search': request.GET.get('search', ''),
+             'catalog': request.GET.get('catalog', 'all')}
+        return render(request, 'pkgsinfo/pkgsinfo.html', context=c)
+    if request.method == 'POST':
+        # DELETE
+        if request.META.has_key('HTTP_X_METHODOVERRIDE'):
+            http_method = request.META['HTTP_X_METHODOVERRIDE']
+            if http_method.lower() == 'delete':
+                print "Got mass delete request for pkginfos"
+                if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
+                    raise PermissionDenied
+                json_data = json.loads(request.body)
+                pkginfo_list = json_data.get('pkginfo_list')
+                if pkginfo_list:
+                    print "  Items to delete: %s" % ', '.join(pkginfo_list)
+                try:
+                    Pkginfo.mass_delete(
+                        pkginfo_list, request.user,
+                        delete_pkg=json_data.get('deletePkg', False)
+                    )
+                except PkginfoError, err:
+                    return HttpResponse(
+                        json.dumps({'result': 'failed',
+                                    'exception_type': str(type(err)),
+                                    'detail': str(err)}),
+                        content_type='application/json')
+                else:
+                    return HttpResponse(
+                        json.dumps({'result': 'success'}),
+                        content_type='application/json')
 
 @login_required
 def list(request):

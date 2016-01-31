@@ -22,6 +22,8 @@ $(document).ready(function() {
     $('#catalog_dropdown_list').on('custom.update', function () {
         update_catalog_dropdown_list();
     })
+    $('#mass_delete').on('click', confirmMassDelete);
+    $('#massaction_dropdown').on('click', enableMassActionMenuItems);
 } );
 
 
@@ -41,25 +43,6 @@ function update_catalog_dropdown_list() {
         list_html += '<li><a href="#" onClick="select_catalog(\''+ catalog_list[i] + '\')">' + catalog_list[i] + '</a></li>\n';
     }
     $('#catalog_dropdown_list').html(list_html);
-}
-
-
-function DEFUNCTgetCatalogNames() {
-    var catalogListURL = '/catalogs/';
-    $.ajax({
-      method: 'GET',
-      url: catalogListURL,
-      timeout: 5000,
-      global: false,
-      cache: false,
-      success: function(data) {
-          $('#data_storage').data('catalog_names', data);
-          // jQuery doesn't actually update the DOM; in order that we
-          // can see what's going on, we'll also update the DOM item
-          $('#data_storage').attr('data-catalog_names', data);
-          update_catalog_dropdown_list();
-      },
-    });
 }
 
 
@@ -115,12 +98,50 @@ $.fn.dataTable.ext.search.push(
 );
 
 
+function get_checked_items() {
+    var selected_items = [];
+    $('.pkginfo_items').each(function(){
+        if ($(this).children('input').is(':checked')) {
+            selected_items.push($(this).data('path'));
+        }
+    })
+    return selected_items;
+}
+
+
+var enableMassActionMenuItems = function() {
+    if (get_checked_items().length == 0) {
+        $('#massaction_dropdown_list').children('li').addClass('disabled');
+    } else {
+        $('#massaction_dropdown_list').children('li').removeClass('disabled');
+    }
+}
+
+
+var confirmMassDelete = function() {
+    selected_item_count = get_checked_items().length
+    if (selected_item_count > 0) {
+        if (selected_item_count == 1) {
+            $('#massDeleteConfirmationModalBodyText').text('Really delete the selected pkginfo item?');
+        } else {
+            $('#massDeleteConfirmationModalBodyText').text('Really delete the ' + selected_item_count.toString() + ' selected pkginfo items?');
+        }
+        // show the deletion confirmation dialog
+        $("#massDeleteConfirmationModal").modal("show");
+    }
+}
+
+
 var render_versions = function(data, type, row, meta) {
     var html = '<ul class="list">\n';
     var catalog_filter = $('#catalog_dropdown').data('value');
     for(var i = 0; i < data.length; i++) {
         if (catalog_filter == 'all' || data[i][1].indexOf(catalog_filter) != -1) {
-            html += '<li><a href="#' + data[i][2] + '" onClick="getPkginfoItem(\'' + data[i][2] + '\')">' + data[i][0] + '</a></li>\n';
+            html += '<li class="pkginfo_items" data-path=\'' + data[i][2] + '\'>'
+            html += '<a href="#' + data[i][2] 
+            html += '" onClick="getPkginfoItem(\'' + data[i][2] + '\')">' 
+            html += data[i][0] + '</a>'
+            html += '<input type="checkbox" class="pull-right"/></li>\n';
         }
     }
     html += '</ul>\n';
@@ -157,7 +178,7 @@ function initPkginfoTable() {
             "render": render_versions,
             "searchable": false,
             "orderable": false,
-          }],
+          },],
          "sDom": "<t>",
          "bPaginate": false,
          "scrollY": "80vh",
@@ -582,6 +603,34 @@ function showDeleteConfirmationModal() {
     }
     // show the deletion confirmation dialog
     $("#deleteConfirmationModal").modal("show");
+}
+
+function deletePkginfoList(pkginfo_list, also_delete_pkg) {
+    var pkginfo_list = get_checked_items();
+    var deletePkg = $('#mass_delete_pkg').is(':checked');
+    $.ajax({
+      type: 'POST',
+      url: '/pkgsinfo/',
+      data: JSON.stringify({'pkginfo_list': pkginfo_list,
+                            'deletePkg': deletePkg}),
+      headers: {'X_METHODOVERRIDE': 'DELETE'},
+      success: function(data) {
+          if (data['result'] == 'failed') {
+                $("#errorModalTitleText").text("Pkginfo delete error");
+                $("#errorModalDetailText").text(data['detail']);
+                $("#errorModal").modal("show");
+                return;
+          }
+          rebuildCatalogs();
+          window.location.hash = '';
+          $('#pkginfo_item_detail').html('');
+          $('#list_items').DataTable().ajax.reload();
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("ERROR: " + textStatus + "\n" + errorThrown);
+      },
+      dataType: 'json'
+    });
 }
 
 function deletePkginfoItem() {

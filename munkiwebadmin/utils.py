@@ -94,6 +94,8 @@ class MunkiGit(object):
         self.runGit(['add', aPath])
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
+        else:
+            print "Git error: %s" % self.results['error']
 
     def deleteFileAtPathForCommitter(self, aPath, aCommitter):
         """Deletes a file from the filesystem and Git repo."""
@@ -101,3 +103,5 @@ class MunkiGit(object):
         self.runGit(['rm', aPath])
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
+        else:
+            print "Git error: %s" % self.results['error']

@@ -9,6 +9,7 @@ from multiprocessing.pool import ThreadPool
 from django.conf import settings
 from process.utils import record_status
 from munkiwebadmin.utils import MunkiGit
+from catalogs.models import Catalog
 
 try:
     GIT = settings.GIT_PATH
@@ -20,6 +21,25 @@ CATALOGS_PATH = os.path.join(REPO_DIR, 'catalogs')
 PKGSINFO_PATH = os.path.join(REPO_DIR, 'pkgsinfo')
 PKGSINFO_PATH_PREFIX_LEN = len(PKGSINFO_PATH) + 1
 PKGSINFO_STATUS_TAG = 'pkgsinfo_list_process'
+
+
+def pkg_ref_count(pkginfo_path, catalog_items):
+    '''Returns the number of pkginfo items containing a reference to
+    the installer_item_location in pkginfo_path'''
+    filepath = os.path.join(PKGSINFO_PATH, pkginfo_path)
+    try:
+        plistdata = plistlib.readPlist(filepath)
+    except:
+        return 0
+    pkg_path = plistdata.get('installer_item_location')
+    if not pkg_path:
+        return 0
+    matching_count = 0
+    if catalog_items:
+        matches = [item for item in catalog_items
+                   if item.get('installer_item_location') == pkg_path]
+        matching_count = len(matches)
+    return matching_count
 
 
 def process_file(filepath):
@@ -201,8 +221,7 @@ class Pkginfo(object):
     @classmethod
     def delete(cls, pathname, user, delete_pkg=False):
         '''Deletes a pkginfo file and optionally the installer item'''
-        pkgsinfo_path = os.path.join(REPO_DIR, 'pkgsinfo')
-        filepath = os.path.join(pkgsinfo_path, pathname)
+        filepath = os.path.join(PKGSINFO_PATH, pathname)
         if delete_pkg:
             pkgs_path = os.path.join(REPO_DIR, 'pkgs')
             try:
@@ -211,13 +230,44 @@ class Pkginfo(object):
                 if install_item_path:
                     pkg_path = os.path.join(pkgs_path, install_item_path)
                     if os.path.exists(pkg_path):
+                        print " Deleting %s" % pkg_path
                         os.unlink(pkg_path)
+                        # unlikely the large pkgs are under direct git control
+                        #if GIT:
+                        #    MunkiGit().deleteFileAtPathForCommitter(
+                        #        pkg_path, user)
             except Exception, err:
                 raise PkginfoDeleteError(err)
         try:
+            print " Deleting %s" % filepath
             os.unlink(filepath)
             if GIT:
                 MunkiGit().deleteFileAtPathForCommitter(
                     filepath, user)
         except Exception, err:
             raise PkginfoDeleteError(err)
+
+    @classmethod
+    def mass_delete(cls, pathname_list, user, delete_pkg=False):
+        '''Deletes pkginfo files from a list and optionally deletes the
+        associated installer items (pkgs)'''
+        errors = []
+        catalog_items = []
+        if delete_pkg:
+            catalog_items = Catalog.detail('all')
+        
+        for pathname in pathname_list:
+            if delete_pkg and pkg_ref_count(pathname, catalog_items) == 1:
+                # OK to delete the pkg if there is only one pkginfo
+                # file that refers to it
+                delete_this_pkg = True
+            else:
+                delete_this_pkg = False
+            try:
+                #print "Would delete %s, deleting pkg: %s" % (pathname, delete_this_pkg)
+                cls.delete(pathname, user, delete_this_pkg)
+            except Exception, err:
+                errors.append('Error %s when removing %s' % (err, pathname))
+        if errors:
+            raise PkginfoDeleteError(errors)
+

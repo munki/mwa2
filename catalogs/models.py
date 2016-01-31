@@ -136,7 +136,7 @@ class Catalog(object):
         return catalog_info
 
     @classmethod
-    def get_pkg_ref_count(self, pkg_path):
+    def get_pkg_ref_count(cls, pkg_path):
         '''Returns the number of pkginfo items containing a reference to
         pkg_path'''
         matching_count = 0
