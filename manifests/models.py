@@ -1,5 +1,6 @@
 from django.db import models
 import os
+import logging
 import subprocess
 import plistlib
 from catalogs.models import Catalog
@@ -12,6 +13,8 @@ REPO_DIR = settings.MUNKI_REPO_DIR
 MANIFESTS_PATH = os.path.join(REPO_DIR, 'manifests')
 MANIFESTS_PATH_PREFIX_LEN = len(MANIFESTS_PATH) + 1
 MANIFEST_LIST_STATUS_TAG = 'manifest_list_process'
+
+logger = logging.getLogger('munkiwebadmin')
 
 try:
     GIT = settings.GIT_PATH
@@ -127,10 +130,11 @@ class Manifest(object):
             try:
                 with open(filepath, 'w') as FILEREF:
                     FILEREF.write(data.encode('utf-8'))
-                print 'Wrote %s' % pathname
+                logger.info('Created %s', pathname)
                 if GIT:
                     MunkiGit().addFileAtPathForCommitter(filepath, user)
             except Exception, err:
+                logger.error('Create failed for %s: %s', pathname, err)
                 raise ManifestWriteError(err)
             return data
         else:
@@ -165,6 +169,7 @@ class Manifest(object):
                     pkginfo = FILEREF.read().decode('utf-8')
                 return pkginfo
             except Exception, err:
+                logger.error('Read failed for %s: %s', pathname, err)
                 raise ManifestReadError(err)
 
     @classmethod
@@ -175,10 +180,11 @@ class Manifest(object):
         try:
             with open(filepath, 'w') as FILEREF:
                 FILEREF.write(data.encode('utf-8'))
-            print 'Wrote %s' % pathname
+            logger.info('Wrote %s', pathname)
             if GIT:
                 MunkiGit().addFileAtPathForCommitter(filepath, user)
         except Exception, err:
+            logger.error('Write failed for %s: %s', pathname, err)
             raise ManifestWriteError(err)
 
     @classmethod
@@ -188,9 +194,11 @@ class Manifest(object):
         filepath = os.path.join(manifest_path, pathname)
         try:
             os.unlink(filepath)
+            logger.info('Deleted %s', pathname)
             if GIT:
                 MunkiGit().deleteFileAtPathForCommitter(filepath, user)
         except Exception, err:
+            logger.error('Delete failed for %s: %s', pathname, err)
             raise ManifestDeleteError(err)
 
     @classmethod

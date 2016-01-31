@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 from django.conf import settings
@@ -5,6 +6,7 @@ from django.conf import settings
 APPNAME = settings.APPNAME
 REPO_DIR = settings.MUNKI_REPO_DIR
 
+logger = logging.getLogger('munkiwebadmin')
 
 try:
     GIT = settings.GIT_PATH
@@ -52,7 +54,7 @@ class MunkiGit(object):
         """Commits the file at 'aPath'. This method will also automatically
         generate the commit log appropriate for the status of aPath where status
         would be 'modified', 'new file', or 'deleted'"""
-        print "Doing git commit"
+        logger.info("Doing git commit")
         self.__chdirToMatchPath(aPath)
         # get the author information
         author_name = committer.first_name + ' ' + committer.last_name
@@ -83,8 +85,8 @@ class MunkiGit(object):
                   % (author_name, action, itempath, APPNAME))
         self.runGit(['commit', '-m', log_msg, '--author', author_info])
         if self.results['returncode'] != 0:
-            print "Failed to commit changes to %s" % aPath
-            print self.results['error']
+            logger.info("Failed to commit changes to %s", aPath)
+            logger.info(self.results['error'])
             return -1
         return 0
 
@@ -95,7 +97,7 @@ class MunkiGit(object):
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
         else:
-            print "Git error: %s" % self.results['error']
+            logger.info("Git error: %s", self.results['error'])
 
     def deleteFileAtPathForCommitter(self, aPath, aCommitter):
         """Deletes a file from the filesystem and Git repo."""
@@ -104,4 +106,4 @@ class MunkiGit(object):
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
         else:
-            print "Git error: %s" % self.results['error']
+            logger.info("Git error: %s", self.results['error'])

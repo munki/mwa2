@@ -182,7 +182,7 @@ var render_name = function(data, type, row, meta) {
 function initPkginfoTable() {
     $('#list_items').dataTable({
         ajax: {
-            url: "/pkgsinfo/json",
+            url: "/pkgsinfo/_json",
             cache: false,
             dataSrc: "",
             complete: function(jqXHR, textStatus){

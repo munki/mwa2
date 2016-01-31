@@ -81,22 +81,6 @@ class Catalog(object):
             return None
 
     @classmethod
-    def DEFUNCTgetValidInstallItems(self, catalog_list):
-        '''Returns a list of valid install item names for the
-        list of catalogs'''
-        install_items = set()
-        for catalog in catalog_list:
-            catalog_items = Catalog.detail(catalog)
-            catalog_item_names = list(set(
-                [item['name'] for item in catalog_items]))
-            install_items.update(catalog_item_names)
-            catalog_item_names_with_versions = list(set(
-                [item['name'] + '-' + trimVersionString(item['version'])
-                 for item in catalog_items]))
-            install_items.update(catalog_item_names_with_versions)
-        return list(install_items)
-
-    @classmethod
     def catalog_info(cls):
         '''Returns a dictionary containing types of install items
         used by autocomplete and manifest validation'''

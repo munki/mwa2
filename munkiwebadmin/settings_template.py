@@ -118,6 +118,31 @@ STATIC_URL = '/static/'
 
 #### end basic Django settings
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+    },
+    'loggers': {
+        'munkiwebadmin': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
+
 # needed by django-wsgiserver when using staticserve=collectstatic
 STATIC_ROOT = os.path.join(BASE_DIR, 'munkiwebadmin/collected_static')
 # Additional locations of static files

@@ -1,5 +1,6 @@
 from django.db import models
 import os
+import logging
 import plistlib
 from collections import defaultdict
 from distutils.version import LooseVersion
@@ -21,6 +22,8 @@ CATALOGS_PATH = os.path.join(REPO_DIR, 'catalogs')
 PKGSINFO_PATH = os.path.join(REPO_DIR, 'pkgsinfo')
 PKGSINFO_PATH_PREFIX_LEN = len(PKGSINFO_PATH) + 1
 PKGSINFO_STATUS_TAG = 'pkgsinfo_list_process'
+
+logger = logging.getLogger('munkiwebadmin')
 
 
 def pkg_ref_count(pkginfo_path, catalog_items):
@@ -131,17 +134,17 @@ class Pkginfo(object):
         all_catalog = os.path.join(CATALOGS_PATH, 'all')
         use_slower_approach = False
         if anyFilesInList_newerThan_(files, all_catalog):
-            print 'files newer than all catalog'
+            logger.debug('files newer than all catalog')
             use_slower_approach = True
         else:
             all_items = plistlib.readPlist(all_catalog)
             if len(all_items) != len(files):
-                print 'number of files differ from all catalog'
+                logger.debug('number of files differ from all catalog')
                 use_slower_approach = True
         pkginfo_dict = defaultdict(list)
         record(message='Assembling pkgsinfo data')
         if use_slower_approach:
-            print "using slower approach"
+            logger.debug("using slower approach")
             # read the individual pkgsinfo files but use four threads
             # to speed things up a bit since we wait a lot for I/O
             pool = ThreadPool(processes=4)
@@ -149,7 +152,7 @@ class Pkginfo(object):
             for name, version, catalogs, pathname in tuples:
                 pkginfo_dict[name].append((version, catalogs, pathname))
         else:
-            print "using faster approach"
+            logger.debug("using faster approach")
             # use the data in the all catalog; one file read instead
             # of hundreds or thousands
             for index, item in enumerate(all_items):
@@ -160,13 +163,13 @@ class Pkginfo(object):
                 pkginfo_dict[name].append((version, catalogs, pathname))
         for key in pkginfo_dict.keys():
             pkginfo_dict[key].sort(compare_versions)
-        print 'Sorted pkgsinfo dict'
+        logger.debug('Sorted pkgsinfo dict')
 
         # now convert to a list of lists
         pkginfo_list = []
         for key, value in pkginfo_dict.items():
             pkginfo_list.append([key, value])
-        print 'Converted to tuple'
+        logger.debug('Converted to tuple')
         record(message='Completed assembly of pkgsinfo data')
         return pkginfo_list
 
@@ -212,10 +215,11 @@ class Pkginfo(object):
         try:
             with open(filepath, 'w') as FILEREF:
                 FILEREF.write(data.encode('utf-8'))
-            print 'Wrote %s' % pathname
+            logger.info('Wrote %s', pathname)
             if GIT:
                 MunkiGit().addFileAtPathForCommitter(filepath, user)
         except Exception, err:
+            logger.error('Write failed for %s: %s', pathname, err)
             raise PkginfoWriteError(err)
 
     @classmethod
@@ -230,21 +234,23 @@ class Pkginfo(object):
                 if install_item_path:
                     pkg_path = os.path.join(pkgs_path, install_item_path)
                     if os.path.exists(pkg_path):
-                        print " Deleting %s" % pkg_path
+                        logger.info("Deleting %s", pkg_path)
                         os.unlink(pkg_path)
                         # unlikely the large pkgs are under direct git control
                         #if GIT:
                         #    MunkiGit().deleteFileAtPathForCommitter(
                         #        pkg_path, user)
             except Exception, err:
+                logger.error('Delete failed for %s: %s', install_item_path, err)
                 raise PkginfoDeleteError(err)
         try:
-            print " Deleting %s" % filepath
+            logger.info("Deleting %s", filepath)
             os.unlink(filepath)
             if GIT:
                 MunkiGit().deleteFileAtPathForCommitter(
                     filepath, user)
         except Exception, err:
+            logger.error('Delete failed for %s: %s', pathname, err)
             raise PkginfoDeleteError(err)
 
     @classmethod
@@ -311,10 +317,11 @@ class Pkginfo(object):
                                          if item not in catalogs_to_remove]
                 try:
                     plistlib.writePlist(plistdata, filepath)
-                    print "Updated %s" % pathname
+                    logger.info("Updated %s", pathname)
                     if GIT:
                         MunkiGit().addFileAtPathForCommitter(filepath, user)
                 except Exception, err:
+                    logger.error('Update failed for %s: %s', pathname, err)
                     errors.append('Error %s when updating %s' % (err, pathname))
                     continue
 

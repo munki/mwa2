@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from models import Process
 
 import json
+import logging
 import os
 import subprocess
 import time
@@ -10,6 +11,8 @@ from django.conf import settings
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 MAKECATALOGS = settings.MAKECATALOGS_PATH
+
+logger = logging.getLogger('munkiwebadmin')
 
 
 def pid_exists(pid):
@@ -66,7 +69,7 @@ def index(request):
 
 def run(request):
     if request.method == 'POST':
-        print 'got run request for makecatalogs'
+        logger.debug('got run request for makecatalogs')
         # remove records for exited processes
         Process.objects.filter(name='makecatalogs', exited=True).delete()
         while True:
@@ -110,7 +113,7 @@ def run(request):
 
 
 def status(request):
-    print 'got status request for makecatalogs'
+    logger.debug('got status request for makecatalogs')
     status_response = {}
     processes = Process.objects.filter(name='makecatalogs', exited=False)
     if processes:
@@ -129,7 +132,7 @@ def status(request):
 
 
 def delete(request):
-    print 'got delete request for makecatalogs'
+    logger.debug('got delete request for makecatalogs')
     try:
         record = Process.objects.get(name='makecatalogs')
         record.delete()

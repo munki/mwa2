@@ -16,11 +16,13 @@ from process.models import Process
 
 import fnmatch
 import json
+import logging
 import os
 
+logger = logging.getLogger('munkiwebadmin')
 
 def status(request):
-    print 'got status request for manifests_list_process'
+    logger.debug('got status request for manifests_list_process')
     status_response = {}
     processes = Process.objects.filter(name=MANIFEST_LIST_STATUS_TAG)
     if processes:
@@ -37,13 +39,13 @@ def status(request):
 @login_required
 def index(request):
     if request.is_ajax():
-        print "Got json request for manifests"
+        logger.debug("Got json request for manifests")
         manifest_list = Manifest.list()
         # send it back in JSON format
         return HttpResponse(json.dumps(manifest_list),
                             content_type='application/json')
     else:
-        print "Got index request for manifests"
+        logger.debug("Got index request for manifests")
         c = {'page': 'manifests'}
         return render(request, 'manifests/manifests.html', context=c)
 
@@ -51,7 +53,7 @@ def index(request):
 @login_required
 def detail(request, manifest_path):
     if request.method == 'GET':
-        print "Got read request for %s" % manifest_path
+        logger.debug("Got read request for %s", manifest_path)
         manifest = Manifest.read(manifest_path)
         #autocomplete_data = Manifest.getAutoCompleteData(manifest_path)
         if manifest is None:
@@ -64,7 +66,7 @@ def detail(request, manifest_path):
         if request.META.has_key('HTTP_X_METHODOVERRIDE'):
             http_method = request.META['HTTP_X_METHODOVERRIDE']
             if http_method.lower() == 'delete':
-                print "Got delete request for %s" % manifest_path
+                logger.debug("Got delete request for %s", manifest_path)
                 if not request.user.has_perm('manifest.delete_manifestfile'):
                     raise PermissionDenied
                 try:
@@ -81,7 +83,7 @@ def detail(request, manifest_path):
                         content_type='application/json')
             elif http_method.lower() == 'put':
                 # regular POST (update/change)
-                print "Got write request for %s" % manifest_path
+                logger.debug("Got write request for %s", manifest_path)
                 if not request.user.has_perm('manifest.change_manifestfile'):
                     raise PermissionDenied
                 if request.is_ajax():
@@ -103,11 +105,12 @@ def detail(request, manifest_path):
                                 json.dumps({'result': 'success'}),
                                 content_type='application/json')
             else:
-                print "Got unknown HTTP_X_METHODOVERRIDE for %s: %s" % (
+                logger.warning(
+                    "Got unknown HTTP_X_METHODOVERRIDE for %s: %s",
                     manifest_path, http_method)
         else:
             # true POST request; create new resource
-            print "Got create request for %s" % manifest_path
+            logger.debug("Got create request for %s", manifest_path)
             try:
                 json_data = json.loads(request.body)
             except ValueError:
