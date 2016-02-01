@@ -25,6 +25,7 @@ $(document).ready(function() {
     $('#mass_delete').on('click', confirmMassDelete);
     $('#massaction_dropdown').on('click', enableMassActionMenuItems);
     $('#mass_edit_catalogs').on('click', openMassEditModal);
+    $(".chosen-select").chosen({width: "100%"});
 } );
 
 
@@ -56,6 +57,8 @@ function update_catalog_edit_list() {
         $('#catalogs_to_add').append(option);
         $('#catalogs_to_delete').append(option.clone());
     }
+    $('#catalogs_to_add').trigger("chosen:updated");
+    $('#catalogs_to_delete').trigger("chosen:updated");
 }
 
 
@@ -651,7 +654,7 @@ function massEditCatalogs() {
                             'catalogs_to_delete': catalogs_to_delete}),
       success: function(data) {
           if (data['result'] == 'failed') {
-                $("#errorModalTitleText").text("Pkginfo delete error");
+                $("#errorModalTitleText").text("Pkginfo editing error");
                 $("#errorModalDetailText").text(data['detail']);
                 $("#errorModal").modal("show");
                 return;

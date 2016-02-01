@@ -90,7 +90,9 @@ def index(request):
         json_data = json.loads(request.body)
         pkginfo_list = json_data.get('pkginfo_list', [])
         catalogs_to_add = json_data.get('catalogs_to_add', [])
+        LOGGER.debug('Adding catalogs: %s', catalogs_to_add)
         catalogs_to_delete = json_data.get('catalogs_to_delete', [])
+        LOGGER.debug('Removing catalogs: %s', catalogs_to_delete)
         try:
             Pkginfo.mass_edit_catalogs(
                 pkginfo_list, catalogs_to_add, catalogs_to_delete,

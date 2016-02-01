@@ -5,6 +5,7 @@
 {% load static %}
 <link rel="stylesheet" href="{% get_static_prefix %}css/plisteditor.css" type="text/css" media="all" />
 <link rel="stylesheet" href="{% get_static_prefix %}pkgsinfo/css/pkgsinfo.css" type="text/css" media="all" />
+<link rel="stylesheet" href="{% get_static_prefix %}css/bootstrap-chosen.css" type="text/css" media="all" />
 {% endblock extra_style %}
 
 {% block java_script %}
@@ -23,6 +24,9 @@
 </script>
 <script type='text/javascript'
     src='{% get_static_prefix %}pkgsinfo/js/pkgsinfo.js'>
+</script>
+<script type='text/javascript'
+    src='{% get_static_prefix %}js/chosen.jquery.min.js'>
 </script>
 {% endblock java_script %}
 
@@ -95,7 +99,7 @@ Bootstrap modal for mass editing pkginfo items
                <div class="col-md-6">
                    <div class="form-group">
                         <label for="catalogs_to_add">Add:</label>
-                        <select multiple class="form-control" id='catalogs_to_add'>
+                        <select multiple class="form-control chosen-select" data-placeholder=" " id='catalogs_to_add'>
                           <option>testing</option>
                         </select>
                    </div>
@@ -103,7 +107,7 @@ Bootstrap modal for mass editing pkginfo items
               <div class="col-md-6">
                   <div class="form-group">
                        <label for="catalogs_to_delete">Remove:</label>
-                       <select multiple class="form-control" id='catalogs_to_delete'>
+                       <select multiple class="form-control chosen-select" data-placeholder=" " id='catalogs_to_delete'>
                          <option>testing</option>
                        </select>
                   </div>
