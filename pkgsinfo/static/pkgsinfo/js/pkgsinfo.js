@@ -132,10 +132,11 @@ var enableMassActionMenuItems = function() {
 
 
 var confirmMassDelete = function() {
-    selected_item_count = get_checked_items().length
+    var selected_items = get_checked_items()
+    var selected_item_count = selected_items.length
     if (selected_item_count > 0) {
         if (selected_item_count == 1) {
-            $('#massDeleteConfirmationModalBodyText').text('Really delete the selected pkginfo item?');
+            $('#massDeleteConfirmationModalBodyText').text('Really delete ' + selected_items[0] + '?');
         } else {
             $('#massDeleteConfirmationModalBodyText').text('Really delete the ' + selected_item_count.toString() + ' selected pkginfo items?');
         }
@@ -146,8 +147,14 @@ var confirmMassDelete = function() {
 
 
 var openMassEditModal = function() {
-    selected_item_count = get_checked_items().length
+    var selected_items = get_checked_items()
+    var selected_item_count = selected_items.length
     if (selected_item_count > 0) {
+        if (selected_item_count == 1) {
+            $('#massEditModalBodyText').text('Edit catalogs for ' + selected_items[0] + ':');
+        } else {
+            $('#massEditModalBodyText').text('Edit catalogs for the ' + selected_item_count.toString() + ' selected pkginfo items:');
+        }
         update_catalog_edit_list();
         // show the deletion confirmation dialog
         $("#massEditModal").modal("show");
