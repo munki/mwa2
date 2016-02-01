@@ -1,13 +1,18 @@
+"""
+catalogs/models.py
+
+"""
 #from django.db import models
 import os
 import plistlib
+from xml.parsers.expat import ExpatError
 
 from django.conf import settings
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 
 
-def trimVersionString(version_string):
+def trim_version_string(version_string):
     ### from munkilib.updatecheck
     """Trims all lone trailing zeros in the version string after major/minor.
 
@@ -22,13 +27,14 @@ def trimVersionString(version_string):
     version_parts = version_string.split('.')
     # strip off all trailing 0's in the version, while over 2 parts.
     while len(version_parts) > 2 and version_parts[-1] == '0':
-        del(version_parts[-1])
+        del version_parts[-1]
     return '.'.join(version_parts)
 
 
 class Catalog(object):
+    '''Not really a Django object, but a useful substitute'''
     @classmethod
-    def list(self):
+    def list(cls):
         '''Returns a list of available catalogs, which is a list
         of catalog names (strings)'''
         catalogs_path = os.path.join(REPO_DIR, 'catalogs')
@@ -38,9 +44,10 @@ class Catalog(object):
                 # don't process these
                 continue
             try:
-                catalog = plistlib.readPlist(
+                # attempt to read the plist so we know it's valid
+                _ = plistlib.readPlist(
                     os.path.join(catalogs_path, name))
-            except Exception:
+            except (ExpatError, IOError):
                 # skip items that aren't valid plists
                 pass
             else:
@@ -48,10 +55,9 @@ class Catalog(object):
         return catalogs
 
     @classmethod
-    def next_catalog_contents(self):
+    def next_catalog_contents(cls):
         '''Generator that returns the next catalog name and its contents'''
         catalogs_path = os.path.join(REPO_DIR, 'catalogs')
-        catalogs = []
         for name in os.listdir(catalogs_path):
             if name.startswith("._") or name == ".DS_Store" or name == 'all':
                 # don't process these
@@ -59,14 +65,14 @@ class Catalog(object):
             try:
                 catalog = plistlib.readPlist(
                     os.path.join(catalogs_path, name))
-            except Exception:
+            except (ExpatError, IOError):
                 # skip items that aren't valid plists
                 pass
             else:
                 yield (name, catalog)
 
     @classmethod
-    def detail(self, catalog_name):
+    def detail(cls, catalog_name):
         '''Gets the contents of a catalog, which is a list
         of pkginfo items'''
         catalog_path = os.path.join(
@@ -75,7 +81,7 @@ class Catalog(object):
             try:
                 catalog_items = plistlib.readPlist(catalog_path)
                 return catalog_items
-            except Exception, errmsg:
+            except (ExpatError, IOError):
                 return None
         else:
             return None
@@ -101,9 +107,9 @@ class Catalog(object):
                      if item.get('update_for')]))
                 update_set.update(update_names)
                 item_names_with_versions = list(set(
-                    [item['name'] + '-' + 
-                    trimVersionString(item['version'])
-                    for item in catalog_items]))
+                    [item['name'] + '-' +
+                     trim_version_string(item['version'])
+                     for item in catalog_items]))
                 versioned_set.update(item_names_with_versions)
                 catalog_info[catalog] = {}
                 catalog_info[catalog]['suggested'] = list(suggested_set)
