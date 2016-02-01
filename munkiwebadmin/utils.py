@@ -93,18 +93,24 @@ class MunkiGit(object):
 
     def add_file_at_path(self, a_path, committer):
         """Commits a file to the Git repo."""
-        self.git_repo_dir = os.path.dirname(a_path)
-        self.run_git(['add', a_path])
-        if self.results['returncode'] == 0:
-            self.commit_file_at_path(a_path, committer)
+        if self.path_is_in_git_repo(a_path):
+            self.git_repo_dir = os.path.dirname(a_path)
+            self.run_git(['add', a_path])
+            if self.results['returncode'] == 0:
+                self.commit_file_at_path(a_path, committer)
+            else:
+                LOGGER.info("Git error: %s", self.results['error'])
         else:
-            LOGGER.info("Git error: %s", self.results['error'])
+            LOGGER.debug("%s is not in a git repo.", a_path)
 
     def delete_file_at_path(self, a_path, committer):
         """Deletes a file from the filesystem and Git repo."""
-        self.git_repo_dir = os.path.dirname(a_path)
-        self.run_git(['rm', a_path])
-        if self.results['returncode'] == 0:
-            self.commit_file_at_path(a_path, committer)
+        if self.path_is_in_git_repo(a_path):
+            self.git_repo_dir = os.path.dirname(a_path)
+            self.run_git(['rm', a_path])
+            if self.results['returncode'] == 0:
+                self.commit_file_at_path(a_path, committer)
+            else:
+                LOGGER.info("Git error: %s", self.results['error'])
         else:
-            LOGGER.info("Git error: %s", self.results['error'])
+            LOGGER.debug("%s is not in a git repo.", a_path)
