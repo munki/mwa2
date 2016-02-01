@@ -16,16 +16,9 @@ except:
 class MunkiGit(object):
     """A simple interface for some common interactions with the git binary"""
     cmd = GIT
+    git_repo_dir = None
     args = []
     results = {}
-
-    @staticmethod
-    def __chdirToMatchPath(aPath):
-        """Changes the current working directory to the same parent directory as
-        the file specified in aPath. Example:
-        "/Users/Shared/munki_repo/manifests/CoolManifest" would change
-        directories to "/Users/Shared/munki_repo/manifests" """
-        os.chdir(os.path.dirname(aPath))
 
     def runGit(self, customArgs=None):
         """Executes the git command with the current set of arguments and
@@ -36,6 +29,7 @@ class MunkiGit(object):
         proc = subprocess.Popen([self.cmd] + customArgs,
                                 shell=False,
                                 bufsize=-1,
+                                cwd=self.git_repo_dir,
                                 stdin = subprocess.PIPE,
                                 stdout = subprocess.PIPE,
                                 stderr = subprocess.PIPE)
@@ -46,7 +40,7 @@ class MunkiGit(object):
 
     def pathIsRepo(self, aPath):
         """Returns True if the path is in a Git repo, false otherwise."""
-        self.__chdirToMatchPath(aPath)
+        self.git_repo_dir = os.path.dirname(aPath)
         self.runGit(['status', aPath])
         return self.results['returncode'] == 0
 
@@ -54,8 +48,7 @@ class MunkiGit(object):
         """Commits the file at 'aPath'. This method will also automatically
         generate the commit log appropriate for the status of aPath where status
         would be 'modified', 'new file', or 'deleted'"""
-        logger.info("Doing git commit")
-        self.__chdirToMatchPath(aPath)
+
         # get the author information
         author_name = committer.first_name + ' ' + committer.last_name
         author_name = author_name if author_name != ' ' else committer.username
@@ -64,6 +57,7 @@ class MunkiGit(object):
         author_info = '%s <%s>' % (author_name, author_email)
 
         # get the status of the file at aPath
+        self.git_repo_dir = os.path.dirname(aPath)
         statusResults = self.runGit(['status', aPath])
         statusOutput = statusResults['output']
         if statusOutput.find("new file:") != -1:
@@ -83,6 +77,8 @@ class MunkiGit(object):
         # generate the log message
         log_msg = ('%s %s \'%s\' via %s'
                   % (author_name, action, itempath, APPNAME))
+        logger.info("Doing git commit for %s", itempath)
+        logger.debug(log_msg)
         self.runGit(['commit', '-m', log_msg, '--author', author_info])
         if self.results['returncode'] != 0:
             logger.info("Failed to commit changes to %s", aPath)
@@ -92,7 +88,7 @@ class MunkiGit(object):
 
     def addFileAtPathForCommitter(self, aPath, aCommitter):
         """Commits a file to the Git repo."""
-        self.__chdirToMatchPath(aPath)
+        self.git_repo_dir = os.path.dirname(aPath)
         self.runGit(['add', aPath])
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
@@ -101,7 +97,7 @@ class MunkiGit(object):
 
     def deleteFileAtPathForCommitter(self, aPath, aCommitter):
         """Deletes a file from the filesystem and Git repo."""
-        self.__chdirToMatchPath(aPath)
+        self.git_repo_dir = os.path.dirname(aPath)
         self.runGit(['rm', aPath])
         if self.results['returncode'] == 0:
             self.commitFileAtPathForCommitter(aPath, aCommitter)
