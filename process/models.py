@@ -1,9 +1,13 @@
+"""
+process/models.py
+"""
+
 from django.db import models
 
 # Create your models here.
 
 class Process(models.Model):
-    # a class for tracking a long-running process
+    '''a class for tracking a long-running process'''
     name = models.CharField(max_length=256)
     pid = models.IntegerField(default=0)
     exited = models.BooleanField(default=False)

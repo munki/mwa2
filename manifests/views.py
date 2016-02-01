@@ -1,28 +1,22 @@
-from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
-#from django.template import RequestContext
+"""
+manifests/views.py
+"""
+from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from django.template.context_processors import csrf
-from django.core.urlresolvers import reverse
-#from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import Permission
-from django.contrib.auth.models import User
-from django.conf import settings
-from django import forms
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 
-from models import Manifest, ManifestError, MANIFEST_LIST_STATUS_TAG
-from catalogs.models import Catalog
+from manifests.models import Manifest, ManifestError, MANIFEST_LIST_STATUS_TAG
 from process.models import Process
 
-import fnmatch
 import json
 import logging
-import os
 
-logger = logging.getLogger('munkiwebadmin')
+LOGGER = logging.getLogger('munkiwebadmin')
 
 def status(request):
-    logger.debug('got status request for manifests_list_process')
+    '''Returns status of long-running process'''
+    LOGGER.debug('got status request for manifests_list_process')
     status_response = {}
     processes = Process.objects.filter(name=MANIFEST_LIST_STATUS_TAG)
     if processes:
@@ -38,35 +32,37 @@ def status(request):
 
 @login_required
 def index(request):
+    '''Returns list of available manifests'''
     if request.is_ajax():
-        logger.debug("Got json request for manifests")
+        LOGGER.debug("Got json request for manifests")
         manifest_list = Manifest.list()
         # send it back in JSON format
         return HttpResponse(json.dumps(manifest_list),
                             content_type='application/json')
     else:
-        logger.debug("Got index request for manifests")
-        c = {'page': 'manifests'}
-        return render(request, 'manifests/manifests.html', context=c)
+        LOGGER.debug("Got index request for manifests")
+        context = {'page': 'manifests'}
+        return render(request, 'manifests/manifests.html', context=context)
 
 
 @login_required
 def detail(request, manifest_path):
+    '''Returns data on a given manifest'''
     if request.method == 'GET':
-        logger.debug("Got read request for %s", manifest_path)
+        LOGGER.debug("Got read request for %s", manifest_path)
         manifest = Manifest.read(manifest_path)
-        #autocomplete_data = Manifest.getAutoCompleteData(manifest_path)
         if manifest is None:
             raise Http404("%s does not exist" % manifest_path)
-        c = {'plist_text': manifest,
-             'pathname': manifest_path}
-        return render(request, 'manifests/detail.html', context=c)
+        context = {'plist_text': manifest,
+                   'pathname': manifest_path}
+        return render(request, 'manifests/detail.html', context=context)
     if request.method == 'POST':
         # could be PUT, POST, or DELETE
         if request.META.has_key('HTTP_X_METHODOVERRIDE'):
             http_method = request.META['HTTP_X_METHODOVERRIDE']
             if http_method.lower() == 'delete':
-                logger.debug("Got delete request for %s", manifest_path)
+                # DELETE
+                LOGGER.debug("Got delete request for %s", manifest_path)
                 if not request.user.has_perm('manifest.delete_manifestfile'):
                     raise PermissionDenied
                 try:
@@ -83,7 +79,7 @@ def detail(request, manifest_path):
                         content_type='application/json')
             elif http_method.lower() == 'put':
                 # regular POST (update/change)
-                logger.debug("Got write request for %s", manifest_path)
+                LOGGER.debug("Got write request for %s", manifest_path)
                 if not request.user.has_perm('manifest.change_manifestfile'):
                     raise PermissionDenied
                 if request.is_ajax():
@@ -105,12 +101,12 @@ def detail(request, manifest_path):
                                 json.dumps({'result': 'success'}),
                                 content_type='application/json')
             else:
-                logger.warning(
+                LOGGER.warning(
                     "Got unknown HTTP_X_METHODOVERRIDE for %s: %s",
                     manifest_path, http_method)
         else:
             # true POST request; create new resource
-            logger.debug("Got create request for %s", manifest_path)
+            LOGGER.debug("Got create request for %s", manifest_path)
             try:
                 json_data = json.loads(request.body)
             except ValueError:
@@ -136,6 +132,6 @@ def detail(request, manifest_path):
                                     'exception_type': str(type(err)),
                                     'detail': str(err)}),
                         content_type='application/json')
-            c = {'plist_text': plist_data,
-                 'pathname': manifest_path,}
-            return render(request, 'manifests/detail.html', context=c)
+            context = {'plist_text': plist_data,
+                       'pathname': manifest_path,}
+            return render(request, 'manifests/detail.html', context=context)

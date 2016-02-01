@@ -1,3 +1,7 @@
+"""
+pkgsinfo/views.py
+"""
+
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import Http404
@@ -7,17 +11,19 @@ from django.core.exceptions import PermissionDenied
 from pkgsinfo.models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
 from process.models import Process
 
+from xml.parsers.expat import ExpatError
+
 import json
 import logging
 import plistlib
 
 
-logger = logging.getLogger('munkiwebadmin')
+LOGGER = logging.getLogger('munkiwebadmin')
 
 def status(request):
     '''Get and return a status message for the process generating
     the pkgsinfo list'''
-    logger.debug('got status request for pkgsinfo_list_process')
+    LOGGER.debug('got status request for pkgsinfo_list_process')
     status_response = {}
     processes = Process.objects.filter(name=PKGSINFO_STATUS_TAG)
     if processes:
@@ -36,7 +42,7 @@ def getjson(request):
     '''Return pkgsinfo as json data -- used by the DataTable that
     displays the list of pkginfo items. Perhaps could be moved into the
     index methods'''
-    logger.debug("Got json request for pkgsinfo")
+    LOGGER.debug("Got json request for pkgsinfo")
     pkginfo_list = Pkginfo.list()
     # send it back in JSON format
     return HttpResponse(json.dumps(pkginfo_list),
@@ -47,7 +53,7 @@ def getjson(request):
 def index(request):
     '''Index methods: GET and POST'''
     if request.method == "GET":
-        logger.debug("Got index request for pkgsinfo")
+        LOGGER.debug("Got index request for pkgsinfo")
         context = {'page': 'pkgsinfo',
                    'search': request.GET.get('search', ''),
                    'catalog': request.GET.get('catalog', 'all')}
@@ -57,7 +63,7 @@ def index(request):
         if request.META.has_key('HTTP_X_METHODOVERRIDE'):
             http_method = request.META['HTTP_X_METHODOVERRIDE']
             if http_method.lower() == 'delete':
-                logger.info("Got mass delete request for pkginfos")
+                LOGGER.info("Got mass delete request for pkginfos")
                 if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
                     raise PermissionDenied
                 json_data = json.loads(request.body)
@@ -78,7 +84,7 @@ def index(request):
                         json.dumps({'result': 'success'}),
                         content_type='application/json')
         # regular POST (update/change)
-        logger.info("Got mass update request for pkginfos")
+        LOGGER.info("Got mass update request for pkginfos")
         if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
             raise PermissionDenied
         json_data = json.loads(request.body)
@@ -105,7 +111,7 @@ def index(request):
 def detail(request, pkginfo_path):
     '''Return detail for a specific pkginfo'''
     if request.method == 'GET':
-        logger.debug("Got read request for %s", pkginfo_path)
+        LOGGER.debug("Got read request for %s", pkginfo_path)
         pkginfo = Pkginfo.read(pkginfo_path)
         if pkginfo is None:
             raise Http404("%s does not exist" % pkginfo_path)
@@ -113,7 +119,7 @@ def detail(request, pkginfo_path):
             pkginfo_plist = plistlib.readPlistFromString(pkginfo)
             installer_item_path = pkginfo_plist.get(
                 'installer_item_location', '')
-        except Exception:
+        except (ExpatError, IOError):
             installer_item_path = ''
         context = {'plist_text': pkginfo,
                    'pathname': pkginfo_path,
@@ -124,7 +130,7 @@ def detail(request, pkginfo_path):
         if request.META.has_key('HTTP_X_METHODOVERRIDE'):
             http_method = request.META['HTTP_X_METHODOVERRIDE']
             if http_method.lower() == 'delete':
-                logger.info("Got delete request for %s", pkginfo_path)
+                LOGGER.info("Got delete request for %s", pkginfo_path)
                 if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
                     raise PermissionDenied
                 json_data = json.loads(request.body)
@@ -145,7 +151,7 @@ def detail(request, pkginfo_path):
                         content_type='application/json')
 
         # regular POST (update/change)
-        logger.info("Got write request for %s", pkginfo_path)
+        LOGGER.info("Got write request for %s", pkginfo_path)
         if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
             raise PermissionDenied
         if request.is_ajax():

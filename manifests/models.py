@@ -1,8 +1,12 @@
+"""
+manifests/models.py
+"""
 from django.db import models
 import os
 import logging
-import subprocess
 import plistlib
+from xml.parsers.expat import ExpatError
+
 from catalogs.models import Catalog
 from django.conf import settings
 from process.utils import record_status
@@ -14,21 +18,21 @@ MANIFESTS_PATH = os.path.join(REPO_DIR, 'manifests')
 MANIFESTS_PATH_PREFIX_LEN = len(MANIFESTS_PATH) + 1
 MANIFEST_LIST_STATUS_TAG = 'manifest_list_process'
 
-logger = logging.getLogger('munkiwebadmin')
+LOGGER = logging.getLogger('munkiwebadmin')
 
 try:
     GIT = settings.GIT_PATH
-except:
+except AttributeError:
     GIT = None
 
 
 def record(message=None, percent_done=None):
+    '''Save a progress message to our process-tracking table'''
     record_status(
         MANIFEST_LIST_STATUS_TAG, message=message, percent_done=percent_done)
 
 
-def trimVersionString(version_string):
-    ### from munkilib.updatecheck
+def trim_version_string(version_string):
     """Trims all lone trailing zeros in the version string after major/minor.
 
     Examples:
@@ -42,7 +46,7 @@ def trimVersionString(version_string):
     version_parts = version_string.split('.')
     # strip off all trailing 0's in the version, while over 2 parts.
     while len(version_parts) > 2 and version_parts[-1] == '0':
-        del(version_parts[-1])
+        del version_parts[-1]
     return '.'.join(version_parts)
 
 
@@ -92,7 +96,7 @@ def manifest_names():
                 dirnames.remove(skipdir)
         subdir = dirpath[len(MANIFESTS_PATH):]
         manifests.extend([os.path.join(subdir, name).lstrip('/')
-                         for name in filenames if not name.startswith('.')])
+                          for name in filenames if not name.startswith('.')])
     return manifests
 
 
@@ -102,12 +106,12 @@ def read_manifest(pathname):
     filepath = os.path.join(manifest_path, pathname)
     try:
         return plistlib.readPlist(filepath)
-    except:
+    except (ExpatError, IOError):
         return None
 
 
 class Manifest(object):
-
+    '''Pseudo-Django object'''
     @classmethod
     def list(cls):
         '''Returns a list of available manifests'''
@@ -128,13 +132,13 @@ class Manifest(object):
                 manifest[section] = []
             data = plistlib.writePlistToString(manifest)
             try:
-                with open(filepath, 'w') as FILEREF:
-                    FILEREF.write(data.encode('utf-8'))
-                logger.info('Created %s', pathname)
+                with open(filepath, 'w') as fileref:
+                    fileref.write(data.encode('utf-8'))
+                LOGGER.info('Created %s', pathname)
                 if GIT:
-                    MunkiGit().addFileAtPathForCommitter(filepath, user)
-            except Exception, err:
-                logger.error('Create failed for %s: %s', pathname, err)
+                    MunkiGit().add_file_at_path(filepath, user)
+            except IOError, err:
+                LOGGER.error('Create failed for %s: %s', pathname, err)
                 raise ManifestWriteError(err)
             return data
         else:
@@ -162,14 +166,14 @@ class Manifest(object):
                 if not item in plistdata:
                     plistdata[item] = default_items[item]
             return plistlib.writePlistToString(plistdata)
-        except:
+        except (ExpatError, IOError):
             # just read and return the raw text
             try:
-                with open(filepath) as FILEREF:
-                    pkginfo = FILEREF.read().decode('utf-8')
+                with open(filepath) as fileref:
+                    pkginfo = fileref.read().decode('utf-8')
                 return pkginfo
-            except Exception, err:
-                logger.error('Read failed for %s: %s', pathname, err)
+            except IOError, err:
+                LOGGER.error('Read failed for %s: %s', pathname, err)
                 raise ManifestReadError(err)
 
     @classmethod
@@ -178,13 +182,13 @@ class Manifest(object):
         manifest_path = os.path.join(REPO_DIR, 'manifests')
         filepath = os.path.join(manifest_path, pathname)
         try:
-            with open(filepath, 'w') as FILEREF:
-                FILEREF.write(data.encode('utf-8'))
-            logger.info('Wrote %s', pathname)
+            with open(filepath, 'w') as fileref:
+                fileref.write(data.encode('utf-8'))
+            LOGGER.info('Wrote %s', pathname)
             if GIT:
-                MunkiGit().addFileAtPathForCommitter(filepath, user)
-        except Exception, err:
-            logger.error('Write failed for %s: %s', pathname, err)
+                MunkiGit().add_file_at_path(filepath, user)
+        except IOError, err:
+            LOGGER.error('Write failed for %s: %s', pathname, err)
             raise ManifestWriteError(err)
 
     @classmethod
@@ -194,21 +198,21 @@ class Manifest(object):
         filepath = os.path.join(manifest_path, pathname)
         try:
             os.unlink(filepath)
-            logger.info('Deleted %s', pathname)
+            LOGGER.info('Deleted %s', pathname)
             if GIT:
-                MunkiGit().deleteFileAtPathForCommitter(filepath, user)
-        except Exception, err:
-            logger.error('Delete failed for %s: %s', pathname, err)
+                MunkiGit().delete_file_at_path(filepath, user)
+        except IOError, err:
+            LOGGER.error('Delete failed for %s: %s', pathname, err)
             raise ManifestDeleteError(err)
 
     @classmethod
-    def getInstallItemNames(cls, manifest_name):
+    def DEFUNCT_get_install_item_names(cls, manifest_name):
         '''Returns a dictionary containing types of install items
         valid for the current manifest'''
         suggested_set = set()
         update_set = set()
         versioned_set = set()
-        manifest = cls.read(manifest_name)
+        manifest = read_manifest(manifest_name)
         if manifest:
             catalog_list = manifest.get('catalogs', ['all'])
             for catalog in catalog_list:
@@ -223,9 +227,9 @@ class Manifest(object):
                          if item.get('update_for')]))
                     update_set.update(update_names)
                     item_names_with_versions = list(set(
-                        [item['name'] + '-' + 
-                        trimVersionString(item['version'])
-                        for item in catalog_items]))
+                        [item['name'] + '-' +
+                         trim_version_string(item['version'])
+                         for item in catalog_items]))
                     versioned_set.update(item_names_with_versions)
         return {'suggested': list(suggested_set),
                 'updates': list(update_set),
@@ -233,7 +237,7 @@ class Manifest(object):
 
 
     @classmethod
-    def findUserForManifest(cls, manifest_name):
+    def DEFUNCT_findUserForManifest(cls, manifest_name):
         '''returns a username for a given manifest name'''
-        if USERNAME_KEY:
-            return cls.read(manifest_name).get(USERNAME_KEY, '')
+        if settings.USERNAME_KEY:
+            return cls.read(manifest_name).get(settings.USERNAME_KEY, '')

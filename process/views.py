@@ -1,5 +1,9 @@
+"""
+process/views.py
+"""
+
 from django.http import HttpResponse
-from models import Process
+from process.models import Process
 
 import json
 import logging
@@ -12,7 +16,7 @@ from django.conf import settings
 REPO_DIR = settings.MUNKI_REPO_DIR
 MAKECATALOGS = settings.MAKECATALOGS_PATH
 
-logger = logging.getLogger('munkiwebadmin')
+LOGGER = logging.getLogger('munkiwebadmin')
 
 
 def pid_exists(pid):
@@ -37,8 +41,8 @@ def pid_exists(pid):
         DWORD = ctypes.c_ulong
         LPDWORD = ctypes.POINTER(DWORD)
         class ExitCodeProcess(ctypes.Structure):
-            _fields_ = [ ('hProcess', HANDLE),
-                ('lpExitCode', LPDWORD)]
+            _fields_ = [('hProcess', HANDLE),
+                        ('lpExitCode', LPDWORD)]
 
         SYNCHRONIZE = 0x100000
         process = kernel32.OpenProcess(SYNCHRONIZE, 0, pid)
@@ -64,12 +68,14 @@ def pid_exists(pid):
         return True
 
 def index(request):
+    '''Not implemented'''
     return HttpResponse(json.dumps('view not implemented'),
-                         content_type='application/json')
+                        content_type='application/json')
 
 def run(request):
+    '''Start running our lengthy process'''
     if request.method == 'POST':
-        logger.debug('got run request for makecatalogs')
+        LOGGER.debug('got run request for makecatalogs')
         # remove records for exited processes
         Process.objects.filter(name='makecatalogs', exited=True).delete()
         while True:
@@ -88,9 +94,8 @@ def run(request):
                 break
             time.sleep(1)
 
-        proc = subprocess.Popen(
-            [MAKECATALOGS, REPO_DIR],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen([MAKECATALOGS, REPO_DIR],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         record = Process(name='makecatalogs')
         record.pid = proc.pid
         record.save()
@@ -109,11 +114,12 @@ def run(request):
         return HttpResponse(json.dumps('done'),
                             content_type='application/json')
     return HttpResponse(json.dumps('must be a POST request'),
-                         content_type='application/json')
+                        content_type='application/json')
 
 
 def status(request):
-    logger.debug('got status request for makecatalogs')
+    '''Get status of our lengthy process'''
+    LOGGER.debug('got status request for makecatalogs')
     status_response = {}
     processes = Process.objects.filter(name='makecatalogs', exited=False)
     if processes:
@@ -132,7 +138,8 @@ def status(request):
 
 
 def delete(request):
-    logger.debug('got delete request for makecatalogs')
+    '''Remove record for our process'''
+    LOGGER.debug('got delete request for makecatalogs')
     try:
         record = Process.objects.get(name='makecatalogs')
         record.delete()
