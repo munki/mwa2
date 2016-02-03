@@ -116,6 +116,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# https://docs.djangoproject.com/en/1.9/howto/static-files/#serving-files-uploaded-by-a-user-during-development
+MEDIA_URL = "/media/"
+
 #### end basic Django settings
 
 LOGGING = {
@@ -219,6 +222,20 @@ APPNAME = 'MunkiWebAdmin2'
 # MUNKI_REPO_DIR holds the local filesystem path to the Munki repo
 MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 #MUNKI_REPO_DIR = '/Volumes/repo'
+
+# if you want to display product icons, provide a base ICONS_URL
+# be sure to include trailing slash
+
+# for development work (Set DEBUG=True), you can set the ICONS_URL to MEDIA_URL.
+# This is not recommended for production. 
+MEDIA_ROOT = os.path.join(MUNKI_REPO_DIR, 'icons')
+ICONS_URL = MEDIA_URL
+
+# For production, you can point to your Munki server 
+# if retrieving icons requires no special authentication
+# -- otherwise, you'll need some other static file server
+#ICONS_URL = "http://localhost/munki_repo/icons/"
+#ICONS_URL = "http://munki/repo/icons/"
 
 # path to the makecatalogs binary
 MAKECATALOGS_PATH = '/usr/local/munki/makecatalogs'

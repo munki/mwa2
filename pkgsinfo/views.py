@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 
 from pkgsinfo.models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
 from process.models import Process
@@ -15,10 +16,34 @@ from xml.parsers.expat import ExpatError
 
 import json
 import logging
+import os
 import plistlib
+import urllib2
 
+REPO_DIR = settings.MUNKI_REPO_DIR
+ICONS_DIR = os.path.join(REPO_DIR, 'icons')
+STATIC_URL = settings.STATIC_URL
+try:
+    ICONS_URL = settings.ICONS_URL
+except AttributeError:
+    ICONS_URL = None
 
 LOGGER = logging.getLogger('munkiwebadmin')
+
+
+def get_icon_url(pkginfo_plist):
+    '''Attempt to build an icon url for the pkginfo'''
+    if ICONS_URL:
+        icon_known_exts = ['.bmp', '.gif', '.icns', '.jpg', '.jpeg', '.png',
+                           '.psd', '.tga', '.tif', '.tiff', '.yuv']
+        icon_name = pkginfo_plist.get('icon_name') or pkginfo_plist['name']
+        if not os.path.splitext(icon_name)[1] in icon_known_exts:
+            icon_name += '.png'
+        icon_path = os.path.join(ICONS_DIR, icon_name)
+        if os.path.isfile(icon_path):
+            return ICONS_URL + urllib2.quote(icon_name.encode('UTF-8'))
+    return STATIC_URL + 'img/GenericPkg.png'
+
 
 def status(request):
     '''Get and return a status message for the process generating
@@ -121,11 +146,13 @@ def detail(request, pkginfo_path):
             pkginfo_plist = plistlib.readPlistFromString(pkginfo)
             installer_item_path = pkginfo_plist.get(
                 'installer_item_location', '')
+            icon_url = get_icon_url(pkginfo_plist)
         except (ExpatError, IOError):
             installer_item_path = ''
         context = {'plist_text': pkginfo,
                    'pathname': pkginfo_path,
-                   'installer_item_path': installer_item_path}
+                   'installer_item_path': installer_item_path,
+                   'icon_url': icon_url}
         return render(request, 'pkgsinfo/detail.html', context=context)
     if request.method == 'POST':
         # DELETE

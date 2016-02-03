@@ -1,4 +1,7 @@
-<h4 id='pathname' data-installer-item-path='{{ installer_item_path }}'>{{ pathname }}</h4>
+<div>
+    <img src="{{ icon_url }}" class='pkginfo-icon pull-left' height='32'/>
+    <h4 id='pathname' data-installer-item-path='{{ installer_item_path }}'>{{ pathname }}</h4>
+</div>
 {% if perms.pkgsinfo.delete_pkginfofile %}
 <div class='pull-right' id='delete_btn'>
     <button type="button" class="btn btn-danger" onClick="showDeleteConfirmationModal()">Delete</button>

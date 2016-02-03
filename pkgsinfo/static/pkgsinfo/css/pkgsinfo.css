@@ -43,3 +43,13 @@
     pointer-events: none;
     color: #666;
 }
+
+.pkginfo-icon {
+    position: absolute;
+    top: -1px;
+}
+
+#pathname {
+    position: relative;
+    left: 40px;
+}
