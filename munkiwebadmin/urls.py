@@ -23,4 +23,9 @@ urlpatterns = [
 urlpatterns += staticfiles_urlpatterns()
 
 # debug/development serving MEDIA files (icons)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+try:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+except django.core.exceptions.ImproperlyConfigured:
+    print "**** MEDIA_URL or MEDIA_ROOT missing from settings.py       ****"
+    print "**** copy MEDIA_URL or MEDIA_ROOT from settings_template.py ****"
+    raise
