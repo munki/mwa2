@@ -149,6 +149,7 @@ def detail(request, pkginfo_path):
             icon_url = get_icon_url(pkginfo_plist)
         except (ExpatError, IOError):
             installer_item_path = ''
+            icon_url = STATIC_URL + 'img/GenericPkg.png'
         context = {'plist_text': pkginfo,
                    'pathname': pkginfo_path,
                    'installer_item_path': installer_item_path,
