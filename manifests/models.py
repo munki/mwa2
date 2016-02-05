@@ -100,7 +100,7 @@ def manifest_names():
     return manifests
 
 
-def read_manifest(pathname):
+def DEFUNCT_read_manifest(pathname):
     '''Reads manifest at relative pathname. Returns a dict.'''
     manifest_path = os.path.join(REPO_DIR, 'manifests')
     filepath = os.path.join(manifest_path, pathname)
@@ -183,7 +183,7 @@ class Manifest(object):
         filepath = os.path.join(manifest_path, pathname)
         try:
             with open(filepath, 'w') as fileref:
-                fileref.write(data.encode('utf-8'))
+                fileref.write(data)
             LOGGER.info('Wrote %s', pathname)
             if GIT:
                 MunkiGit().add_file_at_path(filepath, user)

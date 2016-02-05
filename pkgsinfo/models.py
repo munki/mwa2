@@ -223,7 +223,7 @@ class Pkginfo(object):
         filepath = os.path.join(pkgsinfo_path, pathname)
         try:
             with open(filepath, 'w') as fileref:
-                fileref.write(data.encode('utf-8'))
+                fileref.write(data)
             LOGGER.info('Wrote %s', pathname)
             if GIT:
                 MunkiGit().add_file_at_path(filepath, user)
