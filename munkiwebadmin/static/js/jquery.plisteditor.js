@@ -153,14 +153,15 @@
     function rowControls(opt) {
         var _rowControls = $('<td>', 
                              {'class': 'row-controls', 'width': '20px'}),
-            //btn = $('<button>', { 'class': 'btn btn-danger btn-xs' }),
-            //delSpan = $('<span>', 
-            //            {'class': 'glyphicon glyphicon-minus'});
-            btn = $('<span>',
-                     {'class': 'glyphicon glyphicon-remove-circle'});
+            del_btn = $('<span>',
+                        {'class': 'row_del_btn glyphicon glyphicon-remove-circle'}),
+            link_btn = $('<span>',
+                         {'class': 'row_link_btn glyphicon glyphicon-link'});
         //btn.append(delSpan);
-        _rowControls.append(btn);
-        btn.click(deleteRow(opt));
+        _rowControls.append(del_btn);
+        //_rowControls.append(link_btn);
+        del_btn.click(deleteRow(opt));
+        //link_btn.click(linkRow(opt));
         return _rowControls;
     }
 

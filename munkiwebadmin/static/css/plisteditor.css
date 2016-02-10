@@ -68,9 +68,12 @@
 }
 
 .plist-editor td.row-controls span {
-   color: #c12e2a; /* bootstrap danger red */
    cursor: pointer;
    font-size: 16px;
+}
+
+.plist-editor td.row-controls span.row_del_btn {
+   color: #c12e2a; /* bootstrap danger red */
 }
 
 .plist-editor tr > td.row-controls button,
@@ -79,7 +82,7 @@
 }
 
 .plist-editor tr:hover > td.row-controls button,
-.plist-editor tr:hover > td.row-controls span {
+.plist-editor tr:hover > td.row-controls span.row_del_btn {
     visibility: visible;
 }
 
