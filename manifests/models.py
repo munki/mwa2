@@ -122,6 +122,14 @@ class Manifest(object):
         '''Returns a new empty manifest object'''
         manifest_path = os.path.join(REPO_DIR, 'manifests')
         filepath = os.path.join(manifest_path, pathname)
+        manifest_parent_dir = os.path.dirname(filepath)
+        if not os.path.exists(manifest_parent_dir):
+            try:
+                # attempt to create missing intermediate dirs
+                os.makedirs(manifest_parent_dir)
+            except OSError, err:
+                LOGGER.error('Create failed for %s: %s', pathname, err)
+                raise ManifestWriteError(err)
         if not os.path.exists(filepath):
             manifest = {}
             # create a useful empty manifest
@@ -181,6 +189,14 @@ class Manifest(object):
         '''Writes a manifest file'''
         manifest_path = os.path.join(REPO_DIR, 'manifests')
         filepath = os.path.join(manifest_path, pathname)
+        manifest_parent_dir = os.path.dirname(filepath)
+        if not os.path.exists(manifest_parent_dir):
+            try:
+                # attempt to create missing intermediate dirs
+                os.makedirs(manifest_parent_dir)
+            except OSError, err:
+                LOGGER.error('Create failed for %s: %s', pathname, err)
+                raise ManifestWriteError(err)
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(data)
