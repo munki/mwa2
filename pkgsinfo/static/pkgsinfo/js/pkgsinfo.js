@@ -26,6 +26,14 @@ $(document).ready(function() {
     $('#massaction_dropdown').on('click', enableMassActionMenuItems);
     $('#mass_edit_catalogs').on('click', openMassEditModal);
     $(".chosen-select").chosen({width: "100%"});
+    
+    $(window).on('hashchange', function() {
+        hash = window.location.hash;
+        if (hash.length > 1) {
+            getPkginfoItem(hash.slice(1));
+        }
+    });
+    
 } );
 
 
