@@ -38,3 +38,8 @@ tbody.connectable {
     pointer-events: none;
     color: #666;
 }
+
+.plist-editor tr[data-path="included_manifests"] tr:hover td.row-controls span.row_link_btn {
+    visibility: visible;
+    color: blue;
+}

@@ -15,7 +15,6 @@ $(document).ready(function() {
     if (hash.length > 1) {
         getManifestItem(hash.slice(1));
     }
-    //getCatalogNames();
     getCatalogData();
     $('#listSearchField').focus();
     do_resize();
@@ -57,25 +56,29 @@ $(document).ready(function() {
     // selected when the modal is shown.
     $(document).on('shown.bs.modal', '.modal', function(event){
       $(event.currentTarget).find('input').select();
-    })
+    });
+    
+    // make included manifests link buttons clickable
+    $(document).on('click', 'span.row_link_btn', function(event){
+        linkToIncludedManifest($(event.currentTarget));
+    });
+
+    $(window).on('hashchange', function() {
+        hash = window.location.hash;
+        if (hash.length > 1) {
+            getManifestItem(hash.slice(1));
+        }
+    });
 
 } );
 
-function DEFUNCTgetCatalogNames() {
-    var catalogListURL = '/catalogs/';
-    $.ajax({
-      method: 'GET',
-      url: catalogListURL,
-      timeout: 5000,
-      global: false,
-      cache: false,
-      success: function(data) {
-          $('#data_storage').data('catalog_names', data);
-          // jQuery doesn't actually update the DOM; in order that we
-          // can see what's going on, we'll also update the DOM item
-          $('#data_storage').attr('data-catalog_names', data);
-      },
-    });
+
+function linkToIncludedManifest(target) {
+    //parent is <td>; its parent is <tr>
+    var tableRow = $(target).closest('tr'),
+        manifest_path = $(tableRow).find('.value').val();
+    getManifestItem(manifest_path);
+    window.location.hash = manifest_path;
 }
 
 
@@ -360,6 +363,7 @@ function constructBasics() {
         $('#basics').html('<br/>Invalid plist.')
     }
     setupHelpers();
+    addIncludedManifestLinks('#basics');
 }
 
 
@@ -374,6 +378,19 @@ function constructDetail() {
         $('#detail').html('<br/>Invalid plist.')
     }
    setupHelpers();
+   addIncludedManifestLinks('#detail');
+}
+
+function addIncludedManifestLinks(editor) {
+    rows = $(editor).find("tr[data-path='included_manifests']");
+    $(rows).each(function() {
+        var row_controls = $(this).find('.row-controls');
+        $(row_controls).each(function() {
+            var link_btn = $('<span>',
+                             {'class': 'row_link_btn glyphicon glyphicon-circle-arrow-right'});
+            $(this).append(link_btn);
+        });
+    });
 }
 
 
