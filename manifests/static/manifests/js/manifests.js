@@ -18,7 +18,20 @@ $(document).ready(function() {
     getCatalogData();
     $('#listSearchField').focus();
     do_resize();
-
+    
+    $('#manifest_search_btn').click( function(){
+      searchManifests();
+    });
+    //...or when they press the return key in the form field.
+    $('#manifest-search-text').keydown( function(event){
+      if(event.keyCode == 13) {
+        // Prevent the browser from attempting to submit the form
+        event.preventDefault();
+        event.stopPropagation();
+        searchManifests();
+      }
+    });
+    
     // Submit the new manifest form when the user clicks the Create button...
     $('[data-new="manifest"]').click( function(){
       newManifestItem();
@@ -91,6 +104,8 @@ function initManifestsTable() {
     $('#list_items').dataTable({
         ajax: {
             url: "/manifests/",
+            data:{search_text: $('#manifest-search-text').val(),
+                  search_section: $('#manifest-search-section').val()},
             cache: false,
             dataSrc: function ( json ) {
                 // store these names for later auto-complete and validation use
@@ -572,6 +587,13 @@ function saveManifestItem() {
     });
 }
 
+
+function searchManifests() {
+    $('#searchManifestModal').modal('hide');
+    $('.modal-backdrop').remove();
+    $('#list_items').DataTable().destroy()
+    initManifestsTable();
+}
 
 
 function newManifestItem() {

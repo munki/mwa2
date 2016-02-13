@@ -9,8 +9,10 @@ from django.core.exceptions import PermissionDenied
 from manifests.models import Manifest, ManifestError, MANIFEST_LIST_STATUS_TAG
 from process.models import Process
 
+import fnmatch
 import json
 import logging
+import plistlib
 
 LOGGER = logging.getLogger('munkiwebadmin')
 
@@ -35,7 +37,23 @@ def index(request):
     '''Returns list of available manifests'''
     if request.is_ajax():
         LOGGER.debug("Got json request for manifests")
+        search_section = request.GET.get('search_section')
+        search_text = request.GET.get('search_text')
         manifest_list = Manifest.list()
+        if search_section and search_text:
+            # search the manifests
+            LOGGER.debug("Manifest search terms: %s in %s"
+                         % (search_text, search_section))
+            filtered_names = []
+            for name in manifest_list:
+                manifest = Manifest.readAsPlist(name)
+                if manifest:
+                    for item in manifest.get(search_section, []):
+                        if search_text.lower() in item.lower():
+                            filtered_names.append(name)
+                            break
+
+            manifest_list = filtered_names
         # send it back in JSON format
         return HttpResponse(json.dumps(manifest_list),
                             content_type='application/json')

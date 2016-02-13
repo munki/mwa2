@@ -153,6 +153,23 @@ class Manifest(object):
             raise ManifestAlreadyExistsError('File already exists!')
 
     @classmethod
+    def readAsPlist(cls, pathname):
+        '''Reads a pkginfo file and returns the plist as a dictionary'''
+        manifest_path = os.path.join(REPO_DIR, 'manifests')
+        filepath = os.path.join(manifest_path, pathname)
+        if not os.path.exists(filepath):
+            raise ManifestDoesNotExistError()
+        try:
+            plistdata = plistlib.readPlist(filepath)
+            return plistdata
+        except IOError, err:
+            LOGGER.error('Read failed for %s: %s', pathname, err)
+            raise ManifestReadError(err)
+        except (ExpatError, IOError):
+            # could not parse, return empty dict
+            return {}
+
+    @classmethod
     def read(cls, pathname):
         '''Reads a pkginfo file and returns the plist as text data'''
         manifest_path = os.path.join(REPO_DIR, 'manifests')
@@ -167,14 +184,10 @@ class Manifest(object):
             'managed_updates': [],
             'optional_installs': [],
         }
-        try:
-            plistdata = plistlib.readPlist(filepath)
-            # define default fields for easier editing
-            for item in default_items:
-                if not item in plistdata:
-                    plistdata[item] = default_items[item]
+        plistdata = cls.readAsPlist(pathname)
+        if plistdata:
             return plistlib.writePlistToString(plistdata)
-        except (ExpatError, IOError):
+        else:
             # just read and return the raw text
             try:
                 with open(filepath) as fileref:

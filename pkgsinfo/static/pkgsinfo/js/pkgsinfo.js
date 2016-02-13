@@ -680,8 +680,6 @@ function massEditCatalogs() {
 }
 
 
-
-
 function deletePkginfoList() {
     var pkginfo_list = get_checked_items();
     var deletePkg = $('#mass_delete_pkg').is(':checked');
