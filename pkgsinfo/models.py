@@ -106,6 +106,11 @@ class PkginfoDoesNotExistError(PkginfoError):
     pass
 
 
+class PkginfoAlreadyExistsError(PkginfoError):
+    '''Error when Pkginfo already exists at pathname'''
+    pass
+
+
 class PkginfoFile(models.Model):
     '''Placeholder so we get permissions entries in the admin database'''
     pass
@@ -128,7 +133,6 @@ class Pkginfo(object):
                 [os.path.join(dirpath, filename)
                  for filename in filenames if not filename.startswith('.')])
         return files
-
 
     @classmethod
     def list(cls):
@@ -181,6 +185,61 @@ class Pkginfo(object):
         record(message='Completed assembly of pkgsinfo data')
         return pkginfo_list
 
+    @classmethod
+    def new(cls, pathname, user, pkginfo_data=None):
+        '''Returns a new pkginfo object'''
+        pkgsinfo_path = os.path.join(REPO_DIR, 'pkgsinfo')
+        filepath = os.path.join(pkgsinfo_path, pathname)
+        if os.path.exists(filepath):
+            raise PkginfoAlreadyExistsError('%s already exists!' % pathname)
+        pkginfo_parent_dir = os.path.dirname(filepath)
+        if not os.path.exists(pkginfo_parent_dir):
+            try:
+                # attempt to create missing intermediate dirs
+                os.makedirs(pkginfo_parent_dir)
+            except (IOError, OSError), err:
+                LOGGER.error('Create failed for %s: %s', pathname, err)
+                raise PkginfoWriteError(err)
+        if pkginfo_data:
+            pkginfo = pkginfo_data
+        else:
+            # create a skelton empty pkginfo
+            pkginfo = {
+                'name': 'ProductName',
+                'display_name': 'Display Name',
+                'description': 'Product description',
+                'version': '1.0',
+                'catalogs': ['development']
+            }
+        data = plistlib.writePlistToString(pkginfo)
+        try:
+            with open(filepath, 'w') as fileref:
+                fileref.write(data.encode('utf-8'))
+            LOGGER.info('Created %s', pathname)
+            if user and GIT:
+                MunkiGit().add_file_at_path(filepath, user)
+        except (IOError, OSError), err:
+            LOGGER.error('Create failed for %s: %s', pathname, err)
+            raise PkginfoWriteError(err)
+        return data
+
+
+    @classmethod
+    def readAsPlist(cls, pathname):
+        '''Reads a pkginfo file and returns the plist as a dictionary'''
+        pkgsinfo_path = os.path.join(REPO_DIR, 'pkgsinfo')
+        filepath = os.path.join(pkgsinfo_path, pathname)
+        if not os.path.exists(filepath):
+            raise PkginfoDoesNotExistError()
+        try:
+            plistdata = plistlib.readPlist(filepath)
+            return plistdata
+        except (IOError, OSError), err:
+            LOGGER.error('Read failed for %s: %s', pathname, err)
+            raise PkginfoReadError(err)
+        except (ExpatError, IOError):
+            # could not parse, return empty dict
+            return {}
 
     @classmethod
     def read(cls, pathname):
@@ -225,7 +284,7 @@ class Pkginfo(object):
             with open(filepath, 'w') as fileref:
                 fileref.write(data)
             LOGGER.info('Wrote %s', pathname)
-            if GIT:
+            if user and GIT:
                 MunkiGit().add_file_at_path(filepath, user)
         except Exception, err:
             LOGGER.error('Write failed for %s: %s', pathname, err)
@@ -255,7 +314,7 @@ class Pkginfo(object):
         try:
             LOGGER.info("Deleting %s", filepath)
             os.unlink(filepath)
-            if GIT:
+            if user and GIT:
                 MunkiGit().delete_file_at_path(
                     filepath, user)
         except Exception, err:
@@ -327,7 +386,7 @@ class Pkginfo(object):
                 try:
                     plistlib.writePlist(plistdata, filepath)
                     LOGGER.info("Updated %s", pathname)
-                    if GIT:
+                    if user and GIT:
                         MunkiGit().add_file_at_path(filepath, user)
                 except IOError, err:
                     LOGGER.error('Update failed for %s: %s', pathname, err)

@@ -2,14 +2,16 @@
 pkgsinfo/views.py
 """
 
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict, Http404
 from django.shortcuts import render
-from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
-from pkgsinfo.models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
+from pkgsinfo.models import Pkginfo, PkginfoError, PkginfoAlreadyExistsError,\
+                            PkginfoDoesNotExistError, PkginfoWriteError, \
+                            PkginfoDeleteError, PKGSINFO_STATUS_TAG
 from process.models import Process
 
 from xml.parsers.expat import ExpatError
@@ -19,6 +21,7 @@ import logging
 import os
 import plistlib
 import urllib2
+import datetime
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 ICONS_DIR = os.path.join(REPO_DIR, 'icons')
@@ -29,6 +32,29 @@ except AttributeError:
     ICONS_URL = None
 
 LOGGER = logging.getLogger('munkiwebadmin')
+
+
+def convert_dates_to_strings(plist):
+    '''Converts all date objects in a plist to strings. Enables encoding into
+    JSON'''
+    if isinstance(plist, dict):
+        for key, value in plist.items():
+            if isinstance(value, datetime.datetime):
+                plist[key] = value.isoformat()
+            if isinstance(value, dict):
+                plist[key] = convert_dates_to_strings(value)
+            if isinstance(value, list):
+                plist[key] = convert_dates_to_strings(value)
+        return plist
+    if isinstance(plist, list):
+        for value in plist:
+            if isinstance(value, datetime.datetime):
+                value = value.isoformat()
+            if isinstance(value, dict):
+                value = convert_dates_to_strings(value)
+            if isinstance(value, list):
+                value = convert_dates_to_strings(value)
+        return plist
 
 
 def get_icon_url(pkginfo_plist):
@@ -61,6 +87,204 @@ def status(request):
     return HttpResponse(json.dumps(status_response),
                         content_type='application/json')
 
+
+#@login_required
+@csrf_exempt
+def api(request, pkginfo_path=None):
+    if request.method == 'GET':
+        LOGGER.debug("Got API GET request for pkginfo")
+        if pkginfo_path:
+            response = Pkginfo.readAsPlist(pkginfo_path)
+            response['name'] = pkginfo_path
+        else:
+            pkginfo_list = Pkginfo._list()
+            response = []
+            for item_name in pkginfo_list:
+                pkginfo = Pkginfo.readAsPlist(item_name)
+                pkginfo['filename'] = item_name
+                response.append(pkginfo)
+        return HttpResponse(json.dumps(convert_dates_to_strings(response)) + '\n',
+                            content_type='application/json')
+    if request.META.has_key('HTTP_X_METHODOVERRIDE'):
+        # support browsers/libs that don't directly support the other verbs
+        http_method = request.META['HTTP_X_METHODOVERRIDE']
+        if http_method.lower() == 'put':
+            request.method = 'PUT'
+            request.META['REQUEST_METHOD'] = 'PUT'
+            request.PUT = QueryDict(request.body)
+        if http_method.lower() == 'delete':
+            request.method = 'DELETE'
+            request.META['REQUEST_METHOD'] = 'DELETE'
+            request.DELETE = QueryDict(request.body)
+        if http_method.lower() == 'patch':
+            request.method = 'PATCH'
+            request.META['REQUEST_METHOD'] = 'PATCH'
+            request.PATCH = QueryDict(request.body)
+    if request.method == 'POST':
+        LOGGER.debug("Got API POST request for pkginfo")
+        #if not request.user.has_perm('manifest.change_pkgsinfofile'):
+        #    raise PermissionDenied
+        if pkginfo_path:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'WrongHTTPMethodType',
+                            'detail': 'This should be a PUT or PATCH request'}
+                          ),
+                content_type='application/json', status=400)
+        json_data = json.loads(request.body)
+        if json_data:
+            pkginfo_path = json_data['filename']
+            del json_data['filename']
+            try:
+                #Pkginfo.new(pkginfo_path, request.user, pkginfo_data=json_data)
+                Pkginfo.new(pkginfo_path, None, pkginfo_data=json_data)
+            except PkginfoAlreadyExistsError, err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json',
+                    status=409)
+            except PkginfoWriteError, err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=403)
+            except PkginfoError, err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=403)
+            else:
+                json_data['filename'] = pkginfo_path
+                return HttpResponse(
+                    json.dumps(convert_dates_to_strings(json_data)) + '\n',
+                    content_type='application/json', status=201)
+
+    elif request.method == 'PUT':
+        LOGGER.debug("Got API PUT request for pkginfo")
+        #if not request.user.has_perm('manifest.change_pkginfofile'):
+        #    raise PermissionDenied
+        if not pkginfo_path:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'WrongHTTPMethodType',
+                            'detail': 'Perhaps this should be a POST request'}
+                          ),
+                content_type='application/json', status=400)
+        json_data = json.loads(request.body)
+        if not json_data:
+            # need to deal with this issue
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'NoRequestBody',
+                            'detail': 
+                                'Request body was empty or missing valid data'}
+                          ),
+                content_type='application/json', status=400)
+        if 'filename' in json_data:
+            # perhaps support rename here in the future, but for now,
+            # ignore it
+            del json_data['filename']
+        try:
+            data = plistlib.writePlistToString(json_data)
+            #Pkginfo.write(data, pkginfo_path, request.user)
+            Pkginfo.write(data, pkginfo_path, None)
+        except PkginfoError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            json_data['name'] = pkginfo_path
+            return HttpResponse(
+                json.dumps(convert_dates_to_strings(json_data)) + '\n',
+                content_type='application/json')
+
+    elif request.method == 'PATCH':
+        LOGGER.debug("Got API PATCH request for pkginfi")
+        #if not request.user.has_perm('manifest.change_pkginfofile'):
+        #    raise PermissionDenied
+        if not pkginfo_path:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'WrongHTTPMethodType',
+                            'detail': 'Perhaps this should be a POST request'}
+                          ),
+                content_type='application/json', status=400)
+        json_data = json.loads(request.body)
+        if not json_data:
+            # need to deal with this issue
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'NoRequestBody',
+                            'detail': 
+                                'Request body was empty or missing valid data'}
+                          ),
+                content_type='application/json', status=400)
+        if 'filename' in json_data:
+            # perhaps support rename here in the future, but for now,
+            # ignore it
+            del json_data['filename']
+        # read existing pkginfo
+        pkginfo_data = Pkginfo.readAsPlist(pkginfo_path)
+        pkginfo_data['filename'] = pkginfo_path
+        pkginfo_data.update(json_data)
+        try:
+            data = plistlib.writePlistToString(pkginfo_data)
+            #Pkginfo.write(data, pkginfo_path, request.user)
+            Pkginfo.write(data, pkginfo_path, None)
+        except PkginfoError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            pkginfo_data['filename'] = pkginfo_path
+            return HttpResponse(
+                json.dumps(convert_dates_to_strings(pkginfo_data)) + '\n',
+                content_type='application/json')
+
+    elif request.method == 'DELETE':
+        LOGGER.debug("Got API DELETE request for pkginfo")
+        #if not request.user.has_perm('manifest.delete_pkginfofile'):
+        #    raise PermissionDenied
+        if not pkginfo_path:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'MassDeleteNotSupported',
+                            'detail': 'Deleting all pkginfos is not supported'}
+                          ),
+                content_type='application/json', status=403)
+        try:
+            #Pkginfo.delete(pkginfo_path, request.user)
+            Pkginfo.delete(pkginfo_path, None)
+        except PkginfoDoesNotExistError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=404)
+        except PkginfoDeleteError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        except PkginfoError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            # success
+            return HttpResponse(status=204)
+    
 
 @login_required
 def getjson(request):

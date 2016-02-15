@@ -118,39 +118,41 @@ class Manifest(object):
         return manifest_names()
 
     @classmethod
-    def new(cls, pathname, user):
-        '''Returns a new empty manifest object'''
+    def new(cls, pathname, user, manifest_data=None):
+        '''Returns a new manifest object'''
         manifest_path = os.path.join(REPO_DIR, 'manifests')
         filepath = os.path.join(manifest_path, pathname)
+        if not os.path.exists(filepath):
+            raise ManifestAlreadyExistsError('%s already exists!' % pathame)
         manifest_parent_dir = os.path.dirname(filepath)
         if not os.path.exists(manifest_parent_dir):
             try:
                 # attempt to create missing intermediate dirs
                 os.makedirs(manifest_parent_dir)
-            except OSError, err:
+            except (IOError, OSError), err:
                 LOGGER.error('Create failed for %s: %s', pathname, err)
                 raise ManifestWriteError(err)
-        if not os.path.exists(filepath):
-            manifest = {}
+        if manifest_data:
+            manifest = manifest_data
+        else:
             # create a useful empty manifest
+            manifest = {}
             for section in [
                     'catalogs', 'included_manifests', 'managed_installs',
                     'managed_uninstalls', 'managed_updates',
                     'optional_installs']:
                 manifest[section] = []
-            data = plistlib.writePlistToString(manifest)
-            try:
-                with open(filepath, 'w') as fileref:
-                    fileref.write(data.encode('utf-8'))
-                LOGGER.info('Created %s', pathname)
-                if GIT:
-                    MunkiGit().add_file_at_path(filepath, user)
-            except IOError, err:
-                LOGGER.error('Create failed for %s: %s', pathname, err)
-                raise ManifestWriteError(err)
-            return data
-        else:
-            raise ManifestAlreadyExistsError('File already exists!')
+        data = plistlib.writePlistToString(manifest)
+        try:
+            with open(filepath, 'w') as fileref:
+                fileref.write(data.encode('utf-8'))
+            LOGGER.info('Created %s', pathname)
+            if user and GIT:
+                MunkiGit().add_file_at_path(filepath, user)
+        except (IOError, OSError), err:
+            LOGGER.error('Create failed for %s: %s', pathname, err)
+            raise ManifestWriteError(err)
+        return data
 
     @classmethod
     def readAsPlist(cls, pathname):
@@ -162,7 +164,7 @@ class Manifest(object):
         try:
             plistdata = plistlib.readPlist(filepath)
             return plistdata
-        except IOError, err:
+        except (IOError, OSError), err:
             LOGGER.error('Read failed for %s: %s', pathname, err)
             raise ManifestReadError(err)
         except (ExpatError, IOError):
@@ -193,7 +195,7 @@ class Manifest(object):
                 with open(filepath) as fileref:
                     pkginfo = fileref.read().decode('utf-8')
                 return pkginfo
-            except IOError, err:
+            except (IOError, OSError), err:
                 LOGGER.error('Read failed for %s: %s', pathname, err)
                 raise ManifestReadError(err)
 
@@ -214,9 +216,9 @@ class Manifest(object):
             with open(filepath, 'w') as fileref:
                 fileref.write(data)
             LOGGER.info('Wrote %s', pathname)
-            if GIT:
+            if user and GIT:
                 MunkiGit().add_file_at_path(filepath, user)
-        except IOError, err:
+        except (IOError, OSError), err:
             LOGGER.error('Write failed for %s: %s', pathname, err)
             raise ManifestWriteError(err)
 
@@ -225,12 +227,14 @@ class Manifest(object):
         '''Deletes a manifest file'''
         manifest_path = os.path.join(REPO_DIR, 'manifests')
         filepath = os.path.join(manifest_path, pathname)
+        if not os.path.exists(filepath):
+            raise ManifestDoesNotExistError('%s does not exist' % pathname)
         try:
             os.unlink(filepath)
             LOGGER.info('Deleted %s', pathname)
-            if GIT:
+            if user and GIT:
                 MunkiGit().delete_file_at_path(filepath, user)
-        except IOError, err:
+        except (IOError, OSError), err:
             LOGGER.error('Delete failed for %s: %s', pathname, err)
             raise ManifestDeleteError(err)
 
