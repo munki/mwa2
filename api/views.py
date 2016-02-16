@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from api.models import Plist, PlistError, PlistWriteError, \
                              PlistAlreadyExistsError, \
                              PlistDoesNotExistError, PlistDeleteError
+import datetime
 import json
 import logging
 import plistlib
@@ -23,6 +24,25 @@ def normalizeValueForFiltering(value):
     return []
 
 
+def convert_dates_to_strings(plist):
+    '''Converts all date objects in a plist to strings. Enables encoding into
+    JSON'''
+    if isinstance(plist, dict):
+        for key, value in plist.items():
+            if isinstance(value, datetime.datetime):
+                plist[key] = value.isoformat()
+            if isinstance(value, (list, dict)):
+                plist[key] = convert_dates_to_strings(value)
+        return plist
+    if isinstance(plist, list):
+        for value in plist:
+            if isinstance(value, datetime.datetime):
+                value = value.isoformat()
+            if isinstance(value, (list, dict)):
+                value = convert_dates_to_strings(value)
+        return plist
+
+
 #@login_required
 @csrf_exempt
 def api(request, kind, filepath=None):
@@ -32,6 +52,7 @@ def api(request, kind, filepath=None):
         LOGGER.debug("Got API GET request for %s", kind)
         if filepath:
             response = Plist.read(kind, filepath)
+            response = convert_dates_to_strings(response)
             response['filename'] = filepath
         else:
             filter_terms = request.GET.copy()
@@ -53,6 +74,7 @@ def api(request, kind, filepath=None):
                     response.append(plist)
                 else:
                     plist = Plist.read(kind, item_name)
+                    plist = convert_dates_to_strings(plist)
                     plist['filename'] = item_name
                     matches_filters = True
                     for key, value in filter_terms.items():
@@ -72,7 +94,7 @@ def api(request, kind, filepath=None):
                             plist = {key: plist[key] for key in plist.keys()
                                      if key in api_fields}
                         response.append(plist)
-                    
+
         return HttpResponse(json.dumps(response) + '\n',
                             content_type='application/json')
     if request.META.has_key('HTTP_X_METHODOVERRIDE'):
