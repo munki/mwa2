@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # our apps
+    'api',
     'catalogs',
     'pkgsinfo',
     'manifests',
