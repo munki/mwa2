@@ -13,6 +13,16 @@ import plistlib
 
 LOGGER = logging.getLogger('munkiwebadmin')
 
+
+def normalizeValueForFiltering(value):
+    '''Converts value to a list of strings'''
+    if isinstance(value, (int, float, bool, basestring, dict)):
+        return [str(value).lower()]
+    if isinstance(value, list):
+        return [str(item).lower() for item in value]
+    return []
+
+
 #@login_required
 @csrf_exempt
 def api(request, kind, filepath=None):
@@ -49,9 +59,7 @@ def api(request, kind, filepath=None):
                         if key not in plist:
                             matches_filters = False
                             continue
-                        plist_value = plist[key]
-                        if isinstance(plist_value, basestring):
-                            plist_value = [plist_value]
+                        plist_value = normalizeValueForFiltering(plist[key])
                         match = next(
                             (item for item in plist_value 
                              if value.lower() in item.lower()), None)
@@ -61,8 +69,8 @@ def api(request, kind, filepath=None):
                     if matches_filters:
                         if api_fields:
                             # filter to just the requested fields
-                            plist = {x: plist[x] for x in plist.keys()
-                                        if x in api_fields}
+                            plist = {key: plist[key] for key in plist.keys()
+                                     if key in api_fields}
                         response.append(plist)
                     
         return HttpResponse(json.dumps(response) + '\n',
