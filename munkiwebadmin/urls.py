@@ -7,8 +7,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 admin.autodiscover()
 
-import manifests
-import pkgsinfo
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
@@ -16,14 +14,12 @@ urlpatterns = [
     url(r'^login/$', django.contrib.auth.views.login, name='login'),
     url(r'^logout/$', django.contrib.auth.views.logout_then_login,
         name='logout'),
+    url(r'^api/', include('api.urls')),
     url(r'^manifests/', include('manifests.urls')),
     url(r'^catalogs/', include('catalogs.urls')),
     url(r'^pkgsinfo/', include('pkgsinfo.urls')),
     url(r'^makecatalogs/', include('process.urls')),
     url(r'^$', django.contrib.auth.views.login, name='login'),
-    # api URLS
-    url(r'^api/manifests/(?P<manifest_path>.*$)', manifests.views.api),
-    url(r'^api/pkgsinfo/(?P<pkginfo_path>.*$)', pkgsinfo.views.api),
 ]
 # comment out the following if you are serving
 # static files a different way
