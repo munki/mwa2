@@ -11,6 +11,7 @@ import datetime
 import json
 import logging
 import plistlib
+import re
 
 LOGGER = logging.getLogger('munkiwebadmin')
 
@@ -41,6 +42,29 @@ def convert_dates_to_strings(plist):
             if isinstance(value, (list, dict)):
                 value = convert_dates_to_strings(value)
         return plist
+
+
+def convert_strings_to_dates(jdata):
+    '''Attempt to automatically convert JSON date strings to date objects for
+    plists'''
+    iso_date_pattern = re.compile(
+        "^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\dZ*$")
+    if isinstance(jdata, dict):
+        for key, value in jdata.items():
+            if ('date' in key.lower() and isinstance(value, basestring)
+                    and iso_date_pattern.match(value)):
+                jdata[key] = datetime.datetime.strptime(
+                    value[:19], "%Y-%m-%dT%H:%M:%S")
+            if isinstance(value, (list, dict)):
+                jdata[key] = convert_strings_to_dates(value)
+        return jdata
+    if isinstance(jdata, list):
+        for value in jdata:
+            # we don't support lists of dates, so no need to check
+            # for those
+            if isinstance(value, (list, dict)):
+                value = convert_string_to_dates(value)
+        return jdata
 
 
 #@login_required
@@ -127,6 +151,7 @@ def api(request, kind, filepath=None):
         if json_data:
             filepath = json_data['filename']
             del json_data['filename']
+            json_data = convert_strings_to_dates(json_data)
             try:
                 #Plist.new(
                 #    kind, filepath, request.user, manifest_data=json_data)
@@ -152,6 +177,7 @@ def api(request, kind, filepath=None):
                     content_type='application/json', status=403)
             else:
                 json_data['filename'] = filepath
+                json_data = convert_dates_to_strings(json_data)
                 return HttpResponse(
                     json.dumps(json_data) + '\n',
                     content_type='application/json', status=201)
@@ -181,6 +207,7 @@ def api(request, kind, filepath=None):
             # perhaps support rename here in the future, but for now,
             # ignore it
             del json_data['filename']
+        json_data = convert_strings_to_dates(json_data)
         try:
             data = plistlib.writePlistToString(json_data)
             #Plist.write(data, kind, filepath, request.user)
@@ -193,6 +220,7 @@ def api(request, kind, filepath=None):
                 content_type='application/json', status=403)
         else:
             json_data['filename'] = filepath
+            json_data = convert_dates_to_strings(json_data)
             return HttpResponse(
                 json.dumps(json_data) + '\n',
                 content_type='application/json')
@@ -222,6 +250,7 @@ def api(request, kind, filepath=None):
             # perhaps support rename here in the future, but for now,
             # ignore it
             del json_data['filename']
+        json_data = convert_strings_to_dates(json_data)
         # read existing manifest
         plist_data = Plist.read(kind, filepath)
         plist_data['filename'] = filepath
@@ -238,6 +267,7 @@ def api(request, kind, filepath=None):
                 content_type='application/json', status=403)
         else:
             plist_data['name'] = filepath
+            plist_data = convert_dates_to_strings(plist_data)
             return HttpResponse(
                 json.dumps(plist_data) + '\n',
                 content_type='application/json')
