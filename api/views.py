@@ -77,7 +77,7 @@ def api(request, kind, filepath=None):
         if filepath:
             response = Plist.read(kind, filepath)
             response = convert_dates_to_strings(response)
-            response['filename'] = filepath
+            #response['filename'] = filepath
         else:
             filter_terms = request.GET.copy()
             if 'api_fields' in filter_terms.keys():
@@ -176,7 +176,7 @@ def api(request, kind, filepath=None):
                                 'detail': str(err)}),
                     content_type='application/json', status=403)
             else:
-                json_data['filename'] = filepath
+                #json_data['filename'] = filepath
                 json_data = convert_dates_to_strings(json_data)
                 return HttpResponse(
                     json.dumps(json_data) + '\n',
@@ -219,7 +219,7 @@ def api(request, kind, filepath=None):
                             'detail': str(err)}),
                 content_type='application/json', status=403)
         else:
-            json_data['filename'] = filepath
+            #json_data['filename'] = filepath
             json_data = convert_dates_to_strings(json_data)
             return HttpResponse(
                 json.dumps(json_data) + '\n',
@@ -253,7 +253,7 @@ def api(request, kind, filepath=None):
         json_data = convert_strings_to_dates(json_data)
         # read existing manifest
         plist_data = Plist.read(kind, filepath)
-        plist_data['filename'] = filepath
+        #plist_data['filename'] = filepath
         plist_data.update(json_data)
         try:
             data = plistlib.writePlistToString(plist_data)
