@@ -20,33 +20,33 @@ try:
 except AttributeError:
     GIT = None
 
-class PlistError(Exception):
-    '''Class for Plist errors'''
+class FileError(Exception):
+    '''Class for file errors'''
     pass
 
 
-class PlistReadError(PlistError):
-    '''Error reading a plist'''
+class FileReadError(FileError):
+    '''Error reading a file'''
     pass
 
 
-class PlistWriteError(PlistError):
-    '''Error writing a plist'''
+class FileWriteError(FileError):
+    '''Error writing a file'''
     pass
 
 
-class PlistDeleteError(PlistError):
-    '''Error deleting a plist'''
+class FileDeleteError(FileError):
+    '''Error deleting a file'''
     pass
 
 
-class PlistDoesNotExistError(PlistError):
-    '''Error when plist doesn't exist at pathname'''
+class FileDoesNotExistError(FileError):
+    '''Error when file doesn't exist at pathname'''
     pass
 
 
-class PlistAlreadyExistsError(PlistError):
-    '''Error when creating a new plist at an existing pathname'''
+class FileAlreadyExistsError(FileError):
+    '''Error when creating a new file at an existing pathname'''
     pass
 
 
@@ -73,7 +73,7 @@ class Plist(object):
         kind_dir = os.path.join(REPO_DIR, kind)
         filepath = os.path.join(kind_dir, pathname)
         if os.path.exists(filepath):
-            raise PlistAlreadyExistsError(
+            raise FileAlreadyExistsError(
                 '%s/%s already exists!' % (kind, pathname))
         plist_parent_dir = os.path.dirname(filepath)
         if not os.path.exists(plist_parent_dir):
@@ -82,7 +82,7 @@ class Plist(object):
                 os.makedirs(plist_parent_dir)
             except (IOError, OSError), err:
                 LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
-                raise PlistWriteError(err)
+                raise FileWriteError(err)
         if plist_data:
             plist = plist_data
         else:
@@ -111,7 +111,7 @@ class Plist(object):
                 MunkiGit().add_file_at_path(filepath, user)
         except (IOError, OSError), err:
             LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
-            raise PlistWriteError(err)
+            raise FileWriteError(err)
         return data
 
     @classmethod
@@ -120,13 +120,13 @@ class Plist(object):
         kind_dir = os.path.join(REPO_DIR, kind)
         filepath = os.path.join(kind_dir, pathname)
         if not os.path.exists(filepath):
-            raise PlistDoesNotExistError()
+            raise FileDoesNotExistError()
         try:
             plistdata = plistlib.readPlist(filepath)
             return plistdata
         except (IOError, OSError), err:
             LOGGER.error('Read failed for %s/%s: %s', kind, pathname, err)
-            raise PlistReadError(err)
+            raise FileReadError(err)
         except (ExpatError, IOError):
             # could not parse, return empty dict
             return {}
@@ -143,7 +143,7 @@ class Plist(object):
                 os.makedirs(plist_parent_dir)
             except OSError, err:
                 LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
-                raise PlistWriteError(err)
+                raise FileWriteError(err)
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(data)
@@ -152,7 +152,7 @@ class Plist(object):
                 MunkiGit().add_file_at_path(filepath, user)
         except (IOError, OSError), err:
             LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
-            raise PlistWriteError(err)
+            raise FileWriteError(err)
 
     @classmethod
     def delete(cls, kind, pathname, user):
@@ -160,7 +160,7 @@ class Plist(object):
         kind_dir = os.path.join(REPO_DIR, kind)
         filepath = os.path.join(kind_dir, pathname)
         if not os.path.exists(filepath):
-            raise PlistDoesNotExistError(
+            raise FileDoesNotExistError(
                 '%s/%s does not exist' % (kind, pathname))
         try:
             os.unlink(filepath)
@@ -169,4 +169,74 @@ class Plist(object):
                 MunkiGit().delete_file_at_path(filepath, user)
         except (IOError, OSError), err:
             LOGGER.error('Delete failed for %s/%s: %s', kind, pathname, err)
-            raise PlistDeleteError(err)
+            raise FileDeleteError(err)
+
+
+class MunkiFile(object):
+    '''Pseudo-Django object'''
+    @classmethod
+    def get_fullpath(cls, kind, pathname):
+        '''Returns full filesystem path to requested resource'''
+        return os.path.join(REPO_DIR, kind, pathname)
+
+    @classmethod
+    def list(cls, kind):
+        '''Returns a list of available plists'''
+        files_dir = os.path.join(REPO_DIR, kind)
+        files = []
+        skipdirs = ['.svn', '.git', '.AppleDouble']
+        for dirpath, dirnames, filenames in os.walk(files_dir):
+            for skipdir in skipdirs:
+                if skipdir in dirnames:
+                    dirnames.remove(skipdir)
+            subdir = dirpath[len(files_dir):]
+            files.extend([os.path.join(subdir, name).lstrip('/')
+                         for name in filenames if not name.startswith('.')])
+        return files
+
+    @classmethod
+    def new(cls, kind, fileupload, pathname, user):
+        '''Creates a new file from a file upload; returns 
+        FileAlreadyExistsError if the file already exists at the path'''
+        filepath = os.path.join(REPO_DIR, kind, pathname)
+        if os.path.exists(filepath):
+            raise FileAlreadyExistsError(
+                '%s/%s already exists!' % (kind, pathname))
+        file_parent_dir = os.path.dirname(filepath)
+        if not os.path.exists(file_parent_dir):
+            try:
+                # attempt to create missing intermediate dirs
+                os.makedirs(file_parent_dir)
+            except (IOError, OSError), err:
+                LOGGER.error(
+                    'Create failed for %s/%s: %s', kind, pathname, err)
+                raise FileWriteError(err)
+        cls.write(kind, fileupload, pathname, user)
+
+    @classmethod
+    def write(cls, kind, fileupload, pathname, user):
+        '''Retreives a file upload and saves it to pathname'''
+        filepath = os.path.join(REPO_DIR, kind, pathname)
+        try:
+            with open(filepath, 'w') as fileref:
+                for chunk in fileupload.chunks():
+                    fileref.write(chunk)
+            LOGGER.info('Wrote %s/%s', kind, pathname)
+        except (IOError, OSError), err:
+            LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
+            raise FileWriteError(err)
+
+    @classmethod
+    def delete(cls, kind, pathname, user):
+        '''Deletes file at pathname'''
+        filepath = os.path.join(REPO_DIR, kind, pathname)
+        if not os.path.exists(filepath):
+            raise FileDoesNotExistError(
+                '%s/%s does not exist' % (kind, pathname))
+        try:
+            os.unlink(filepath)
+            LOGGER.info('Deleted %s/%s', kind, pathname)
+        except (IOError, OSError), err:
+            LOGGER.error('Delete failed for %s/%s: %s', kind, pathname, err)
+            raise FileDeleteError(err)
+        

@@ -1,15 +1,21 @@
 from django.http import HttpResponse, Http404
 from django.http import QueryDict
+from django.http import FileResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
 
-from api.models import Plist, PlistError, PlistWriteError, \
-                             PlistAlreadyExistsError, \
-                             PlistDoesNotExistError, PlistDeleteError
+
+from api.models import Plist, MunkiFile
+from api.models import FileError, FileWriteError, \
+                       FileAlreadyExistsError, \
+                       FileDoesNotExistError, FileDeleteError
+
 import datetime
 import json
 import logging
+import os
+import mimetypes
 import plistlib
 import re
 
@@ -66,10 +72,9 @@ def convert_strings_to_dates(jdata):
                 value = convert_string_to_dates(value)
         return jdata
 
-
 #@login_required
 @csrf_exempt
-def api(request, kind, filepath=None):
+def plist_api(request, kind, filepath=None):
     if kind not in ['manifests', 'pkgsinfo']:
         return HttpResponse(status=404)
     if request.method == 'GET':
@@ -156,20 +161,20 @@ def api(request, kind, filepath=None):
                 #Plist.new(
                 #    kind, filepath, request.user, manifest_data=json_data)
                 Plist.new(kind, filepath, None, plist_data=json_data)
-            except PlistAlreadyExistsError, err:
+            except FileAlreadyExistsError, err:
                 return HttpResponse(
                     json.dumps({'result': 'failed',
                                 'exception_type': str(type(err)),
                                 'detail': str(err)}),
                     content_type='application/json',
                     status=409)
-            except PlistWriteError, err:
+            except FileWriteError, err:
                 return HttpResponse(
                     json.dumps({'result': 'failed',
                                 'exception_type': str(type(err)),
                                 'detail': str(err)}),
                     content_type='application/json', status=403)
-            except PlistError, err:
+            except FileError, err:
                 return HttpResponse(
                     json.dumps({'result': 'failed',
                                 'exception_type': str(type(err)),
@@ -212,7 +217,7 @@ def api(request, kind, filepath=None):
             data = plistlib.writePlistToString(json_data)
             #Plist.write(data, kind, filepath, request.user)
             Plist.write(data, kind, filepath, None)
-        except PlistError, err:
+        except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
@@ -259,7 +264,7 @@ def api(request, kind, filepath=None):
             data = plistlib.writePlistToString(plist_data)
             #Plist.write(data, kind, filepath, request.user)
             Plist.write(data, kind, filepath, None)
-        except PlistError, err:
+        except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
@@ -286,19 +291,139 @@ def api(request, kind, filepath=None):
         try:
             #Plist.delete(kind, filepath, request.user)
             Plist.delete(kind, filepath, None)
-        except PlistDoesNotExistError, err:
+        except FileDoesNotExistError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
                             'detail': str(err)}),
                 content_type='application/json', status=404)
-        except PlistDeleteError, err:
+        except FileDeleteError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
                             'detail': str(err)}),
                 content_type='application/json', status=403)
-        except PlistError, err:
+        except FileError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            # success
+            return HttpResponse(status=204)
+
+
+#@login_required
+@csrf_exempt
+def file_api(request, kind, filepath=None):
+    if kind not in ['icons', 'pkgs']:
+        return HttpResponse(status=404)
+    if request.method == 'GET':
+        LOGGER.debug("Got API GET request for %s", kind)
+        if filepath:
+            fullpath = MunkiFile.get_fullpath(kind, filepath)
+            if not os.path.exists(fullpath):
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': 'FileDoesNotExist',
+                                'detail': '%s does not exist' % filepath}),
+                    content_type='application/json', status=404)
+            try:
+                response = FileResponse(open(fullpath, 'rb'),
+                    content_type=mimetypes.guess_type(fullpath)[0])
+                response['Content-Length'] = os.path.getsize(fullpath)
+                response['Content-Disposition'] = (
+                    'attachment; filename="%s"' % os.path.basename(filepath))
+                return response
+            except (IOError, OSError), err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=403)
+        else:
+            response = MunkiFile.list(kind)
+            return HttpResponse(json.dumps(response) + '\n',
+                                content_type='application/json')
+
+    if request.META.has_key('HTTP_X_METHODOVERRIDE'):
+        # support browsers/libs that don't directly support the other verbs
+        http_method = request.META['HTTP_X_METHODOVERRIDE']
+        if http_method.lower() == 'put':
+            request.method = 'PUT'
+            request.META['REQUEST_METHOD'] = 'PUT'
+            request.PUT = QueryDict(request.body)
+        if http_method.lower() == 'delete':
+            request.method = 'DELETE'
+            request.META['REQUEST_METHOD'] = 'DELETE'
+            request.DELETE = QueryDict(request.body)
+        if http_method.lower() == 'patch':
+            request.method = 'PATCH'
+            request.META['REQUEST_METHOD'] = 'PATCH'
+            request.PATCH = QueryDict(request.body)
+
+    if request.method == 'POST':
+        LOGGER.debug("Got API POST request for %s", kind)
+        filename = request.POST.get('filename') or filepath
+        filedata = request.FILES.get('filedata')
+        if not (filename and filedata):
+            # malformed request
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'BadRequest',
+                            'detail': 'Missing filename or filedata'}),
+                content_type='application/json', status=400)
+        try:
+            MunkiFile.new(kind, filedata, filename, None)
+        except FileError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            return HttpResponse(
+                json.dumps({'filename': filename}),
+                content_type='application/json', status=200)
+
+    if request.method in ('PUT', 'PATCH'):
+        LOGGER.debug("Got API %s request for %s", request.method, kind)
+        response = HttpResponse(
+            json.dumps({'result': 'failed',
+                        'exception_type': 'NotAllowed',
+                        'detail': 'This method is not supported'}),
+            content_type='application/json', status=405)
+        response['Allow'] = 'GET, POST, DELETE'
+        return response
+
+    if request.method == 'DELETE':
+        LOGGER.debug("Got API DELETE request for %s", kind)
+        #if not request.user.has_perm('manifest.delete_manifestfile'):
+        #    raise PermissionDenied
+        if not filepath:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'MassDeleteNotSupported',
+                            'detail': 'Deleting all items is not supported'}
+                          ),
+                content_type='application/json', status=403)
+        try:
+            #MunkiFile.delete(kind, filepath, request.user)
+            MunkiFile.delete(kind, filepath, None)
+        except FileDoesNotExistError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=404)
+        except FileDeleteError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
