@@ -72,17 +72,26 @@ def convert_strings_to_dates(jdata):
                 value = convert_string_to_dates(value)
         return jdata
 
+
 #@login_required
 @csrf_exempt
 def plist_api(request, kind, filepath=None):
     if kind not in ['manifests', 'pkgsinfo']:
         return HttpResponse(status=404)
+
+    response_type = 'json'
+    if request.META.get('HTTP_ACCEPT') == 'application/xml':
+        response_type = 'xml_plist'
+    request_type = 'json'
+    if request.META.get('CONTENT_TYPE') == 'application/xml':
+        request_type = 'xml_plist'
+
     if request.method == 'GET':
         LOGGER.debug("Got API GET request for %s", kind)
         if filepath:
             response = Plist.read(kind, filepath)
-            response = convert_dates_to_strings(response)
-            #response['filename'] = filepath
+            if response_type == 'json':
+                response = convert_dates_to_strings(response)
         else:
             filter_terms = request.GET.copy()
             if 'api_fields' in filter_terms.keys():
@@ -123,9 +132,13 @@ def plist_api(request, kind, filepath=None):
                             plist = {key: plist[key] for key in plist.keys()
                                      if key in api_fields}
                         response.append(plist)
+        if response_type == 'json':
+            return HttpResponse(json.dumps(response) + '\n',
+                                content_type='application/json')
+        else:
+            return HttpResponse(plistlib.writePlistToString(response),
+                                content_type='application/xml')
 
-        return HttpResponse(json.dumps(response) + '\n',
-                            content_type='application/json')
     if request.META.has_key('HTTP_X_METHODOVERRIDE'):
         # support browsers/libs that don't directly support the other verbs
         http_method = request.META['HTTP_X_METHODOVERRIDE']
@@ -141,6 +154,7 @@ def plist_api(request, kind, filepath=None):
             request.method = 'PATCH'
             request.META['REQUEST_METHOD'] = 'PATCH'
             request.PATCH = QueryDict(request.body)
+
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
         #if not request.user.has_perm('manifest.change_manifestfile'):
@@ -152,15 +166,18 @@ def plist_api(request, kind, filepath=None):
                             'detail': 'This should be a PUT or PATCH request'}
                           ),
                 content_type='application/json', status=400)
-        json_data = json.loads(request.body)
-        if json_data:
-            filepath = json_data['filename']
-            del json_data['filename']
-            json_data = convert_strings_to_dates(json_data)
+        if request_type == 'json':
+            request_data = json.loads(request.body)
+            request_data = convert_strings_to_dates(request_data)
+        else:
+            request_data = plistlib.readPlistFromString(request.body)
+        if request_data:
+            filepath = request_data['filename']
+            del request_data['filename']
             try:
                 #Plist.new(
                 #    kind, filepath, request.user, manifest_data=json_data)
-                Plist.new(kind, filepath, None, plist_data=json_data)
+                Plist.new(kind, filepath, None, plist_data=request_data)
             except FileAlreadyExistsError, err:
                 return HttpResponse(
                     json.dumps({'result': 'failed',
@@ -181,11 +198,15 @@ def plist_api(request, kind, filepath=None):
                                 'detail': str(err)}),
                     content_type='application/json', status=403)
             else:
-                #json_data['filename'] = filepath
-                json_data = convert_dates_to_strings(json_data)
-                return HttpResponse(
-                    json.dumps(json_data) + '\n',
-                    content_type='application/json', status=201)
+                if response_type == 'json':
+                    request_data = convert_dates_to_strings(request_data)
+                    return HttpResponse(
+                        json.dumps(request_data) + '\n',
+                        content_type='application/json', status=201)
+                else:
+                    return HttpResponse(
+                        plistlib.writePlistToString(request_data),
+                        content_type='application/xml', status=201)
 
     elif request.method == 'PUT':
         LOGGER.debug("Got API PUT request for %s", kind)
@@ -198,7 +219,11 @@ def plist_api(request, kind, filepath=None):
                             'detail': 'Perhaps this should be a POST request'}
                           ),
                 content_type='application/json', status=400)
-        json_data = json.loads(request.body)
+        if request_type == 'json':
+            request_data = json.loads(request.body)
+            request_data = convert_strings_to_dates(request_data)
+        else:
+            request_data = plistlib.readPlistFromString(request.body)
         if not json_data:
             # need to deal with this issue
             return HttpResponse(
@@ -208,13 +233,13 @@ def plist_api(request, kind, filepath=None):
                                 'Request body was empty or missing valid data'}
                           ),
                 content_type='application/json', status=400)
-        if 'filename' in json_data:
+        if 'filename' in request_data :
             # perhaps support rename here in the future, but for now,
             # ignore it
-            del json_data['filename']
-        json_data = convert_strings_to_dates(json_data)
+            del request_data['filename']
+        
         try:
-            data = plistlib.writePlistToString(json_data)
+            data = plistlib.writePlistToString(request_data)
             #Plist.write(data, kind, filepath, request.user)
             Plist.write(data, kind, filepath, None)
         except FileError, err:
@@ -224,11 +249,15 @@ def plist_api(request, kind, filepath=None):
                             'detail': str(err)}),
                 content_type='application/json', status=403)
         else:
-            #json_data['filename'] = filepath
-            json_data = convert_dates_to_strings(json_data)
-            return HttpResponse(
-                json.dumps(json_data) + '\n',
-                content_type='application/json')
+            if response_type == 'json':
+                request_data = convert_dates_to_strings(request_data)
+                return HttpResponse(
+                    json.dumps(request_data) + '\n',
+                    content_type='application/json')
+            else:
+                return HttpResponse(
+                    plistlib.writePlistToString(request_data),
+                    content_type='application/xml')
 
     elif request.method == 'PATCH':
         LOGGER.debug("Got API PATCH request for %s" % kind)
@@ -241,8 +270,12 @@ def plist_api(request, kind, filepath=None):
                             'detail': 'Perhaps this should be a POST request'}
                           ),
                 content_type='application/json', status=400)
-        json_data = json.loads(request.body)
-        if not json_data:
+        if request_type == 'json':
+            request_data = json.loads(request.body)
+            request_data = convert_strings_to_dates(request_data)
+        else:
+            request_data = plistlib.readPlistFromString(request.body)
+        if not request_data:
             # need to deal with this issue
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -251,15 +284,14 @@ def plist_api(request, kind, filepath=None):
                                 'Request body was empty or missing valid data'}
                           ),
                 content_type='application/json', status=400)
-        if 'filename' in json_data:
+        if 'filename' in request_data:
             # perhaps support rename here in the future, but for now,
             # ignore it
-            del json_data['filename']
-        json_data = convert_strings_to_dates(json_data)
+            del request_data['filename']
         # read existing manifest
         plist_data = Plist.read(kind, filepath)
         #plist_data['filename'] = filepath
-        plist_data.update(json_data)
+        plist_data.update(request_data)
         try:
             data = plistlib.writePlistToString(plist_data)
             #Plist.write(data, kind, filepath, request.user)
@@ -271,11 +303,15 @@ def plist_api(request, kind, filepath=None):
                             'detail': str(err)}),
                 content_type='application/json', status=403)
         else:
-            plist_data['name'] = filepath
-            plist_data = convert_dates_to_strings(plist_data)
-            return HttpResponse(
-                json.dumps(plist_data) + '\n',
-                content_type='application/json')
+            if response_type == 'json':
+                plist_data = convert_dates_to_strings(plist_data)
+                return HttpResponse(
+                    json.dumps(plist_data) + '\n',
+                    content_type='application/json')
+            else:
+                return HttpResponse(
+                    plistlib.writePlistToString(plist_data),
+                    content_type='application/xml')
 
     elif request.method == 'DELETE':
         LOGGER.debug("Got API DELETE request for %s", kind)
