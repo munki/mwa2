@@ -104,8 +104,17 @@ function initManifestsTable() {
     $('#list_items').dataTable({
         ajax: {
             url: "/manifests/",
-            data:{search_text: $('#manifest-search-text').val(),
-                  search_section: $('#manifest-search-section').val()},
+            data: function() {
+                if ($('#manifest-search-text').val() == '') {
+                    return {};
+                } else {
+                    var key = $('#manifest-search-section').val();
+                    var value = $('#manifest-search-text').val();
+                    var filter_terms = {};
+                    filter_terms[key] = value;
+                    return filter_terms;
+                }
+            },
             cache: false,
             dataSrc: function ( json ) {
                 // store these names for later auto-complete and validation use
