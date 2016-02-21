@@ -20,6 +20,16 @@ import plistlib
 
 LOGGER = logging.getLogger('munkiwebadmin')
 
+
+def normalizeValueForFiltering(value):
+    '''Converts value to a list of strings'''
+    if isinstance(value, (int, float, bool, basestring, dict)):
+        return [str(value).lower()]
+    if isinstance(value, list):
+        return [str(item).lower() for item in value]
+    return []
+
+
 def status(request):
     '''Returns status of long-running process'''
     LOGGER.debug('got status request for manifests_list_process')
@@ -41,22 +51,31 @@ def index(request):
     '''Returns list of available manifests'''
     if request.is_ajax():
         LOGGER.debug("Got json request for manifests")
-        search_section = request.GET.get('search_section')
-        search_text = request.GET.get('search_text')
+        filter_terms = request.GET
+        LOGGER.debug("request.GET: %s", request.GET.dict())
         manifest_list = Manifest.list()
-        if search_section and search_text:
+        if filter_terms:
+            LOGGER.debug("Filter terms: %s", filter_terms.items())
             # search the manifests
-            LOGGER.debug("Manifest search terms: %s in %s"
-                         % (search_text, search_section))
             filtered_names = []
             for name in manifest_list:
                 manifest = Manifest.readAsPlist(name)
-                if manifest:
-                    for item in manifest.get(search_section, []):
-                        if search_text.lower() in item.lower():
-                            filtered_names.append(name)
-                            break
-
+                matches_filters = True
+                for key, value in filter_terms.items():
+                    if key == '_':
+                        continue
+                    if key not in manifest:
+                        matches_filters = False
+                        continue
+                    plist_value = normalizeValueForFiltering(manifest[key])
+                    match = next(
+                        (item for item in plist_value 
+                         if value.lower() in item.lower()), None)
+                    if not match:
+                        matches_filters = False
+                        continue
+                if matches_filters:
+                    filtered_names.append(name)
             manifest_list = filtered_names
         # send it back in JSON format
         return HttpResponse(json.dumps(manifest_list),
