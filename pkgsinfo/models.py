@@ -123,7 +123,7 @@ class Pkginfo(Plist):
                 name = item.get('name', 'NO_NAME')
                 version = item.get('version', 'NO_VERSION')
                 catalogs = item.get('catalogs', [])
-                pathname = files[index][PKGSINFO_PATH_PREFIX_LEN:]
+                pathname = files[index]
                 pkginfo_dict[name].append((version, catalogs, pathname))
         for key in pkginfo_dict.keys():
             pkginfo_dict[key].sort(compare_versions)
