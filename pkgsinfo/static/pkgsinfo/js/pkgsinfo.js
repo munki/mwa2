@@ -546,21 +546,24 @@ function getDevelopers() {
 function rebuildCatalogs() {
     $('#process_progress_title_text').text('Rebuilding catalogs...')
     $('#process_progress_status_text').text('Processing...')
+    $('#process_progress').modal('show');
     poll_loop = setInterval(function() {
             update_status('/makecatalogs/status');
         }, 1000);
     $.ajax({
-      type: 'POST',
-      url: '/makecatalogs/run',
-      data: '',
-      dataType: 'json',
-      global: false,
-      complete: function(jqXHR, textStatus){
-          window.clearInterval(poll_loop);
-          $('#process_progress').modal('hide');
+        type: 'POST',
+        url: '/makecatalogs/run',
+        data: '',
+        dataType: 'json',
+        global: false,
+        complete: function(jqXHR, textStatus){
+            window.clearInterval(poll_loop);
+            $('#process_progress').modal('hide');
+            $('#list_items').DataTable().ajax.reload();
         },
     });
 }
+
 
 function monitor_pkgsinfo_list() {
     $('#process_progress_title_text').text('Getting pkgsinfo data...')
@@ -575,33 +578,41 @@ function savePkginfoItem() {
     // save pkginfo item back to the repo
     $('.modal-backdrop').remove();
     var plist_data = editor.getValue();
-    var postdata = JSON.stringify({'plist_data': plist_data});
-    var pkginfoItemURL = '/pkgsinfo/' + current_pathname;
+    //var postdata = JSON.stringify({'plist_data': plist_data});
+    var pkginfoItemURL = '/api/pkgsinfo/' + current_pathname;
     $.ajax({
-      type: 'POST',
-      url: pkginfoItemURL,
-      data: postdata,
-      timeout: 10000,
-      success: function(data) {
-          if (data['result'] == 'failed') {
-                $("#errorModalTitleText").text("Pkginfo write error");
-                $("#errorModalDetailText").text(data['detail']);
-                $("#errorModal").modal("show");
-                return;
-            }
+        type: 'POST',
+        url: pkginfoItemURL,
+        headers: {'X_METHODOVERRIDE': 'PUT',
+                  'Content-Type': 'application/xml',
+                  'Accept': 'application/xml'},
+        data: plist_data,
+        timeout: 10000,
+        success: function(data) {
             hideSaveOrCancelBtns();
             rebuildCatalogs();
             if (requested_pathname.length) {
                 getPkginfoItem(requested_pathname);
-            } else {
-                // refresh our list
-                $('#list_items').DataTable().ajax.reload();
             }
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
-      },
-      dataType: 'json'
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+              try {
+                  var json_data = $.parseJSON(jqXHR.responseText)
+                  if (json_data['result'] == 'failed') {
+                      $("#errorModalTitleText").text("Pkginfo write error");
+                      $("#errorModalDetailText").text(json_data['detail']);
+                      $("#errorModal").modal("show");
+                      return;
+                  }
+              } catch(err) {
+                  // do nothing
+              }
+              //alert("ERROR: " + textStatus + "\n" + errorThrown);
+              $("#errorModalTitleText").text("Pkginfo write error");
+              $("#errorModalDetailText").text(textStatus);
+              $("#errorModal").modal("show");
+              return;
+          },
     });
 }
 
@@ -670,7 +681,6 @@ function massEditCatalogs() {
           rebuildCatalogs();
           window.location.hash = '';
           $('#pkginfo_item_detail').html('');
-          $('#list_items').DataTable().ajax.reload();
       },
       error: function(jqXHR, textStatus, errorThrown) {
         alert("ERROR: " + textStatus + "\n" + errorThrown);
@@ -699,7 +709,6 @@ function deletePkginfoList() {
           rebuildCatalogs();
           window.location.hash = '';
           $('#pkginfo_item_detail').html('');
-          $('#list_items').DataTable().ajax.reload();
       },
       error: function(jqXHR, textStatus, errorThrown) {
         alert("ERROR: " + textStatus + "\n" + errorThrown);
@@ -708,31 +717,75 @@ function deletePkginfoList() {
     });
 }
 
+
+function deleteInstallerItem(installer_item_path) {
+    if (installer_item_path) {
+        the_url = "/api/pkgs/" + installer_item_path
+        $.ajax({
+            type: 'POST',
+            url: the_url,
+            headers: {'X_METHODOVERRIDE': 'DELETE'},
+            success: function(data) {
+                // do nothing
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                try {
+                    var json_data = $.parseJSON(jqXHR.responseText)
+                    if (json_data['result'] == 'failed') {
+                        $("#errorModalTitleText").text("Package delete error");
+                        $("#errorModalDetailText").text(json_data['detail']);
+                        $("#errorModal").modal("show");
+                        return;
+                    }
+                } catch(err) {
+                    // do nothing
+                }
+                //alert("ERROR: " + textStatus + "\n" + errorThrown);
+                $("#errorModalTitleText").text("Package delete error");
+                $("#errorModalDetailText").text(textStatus);
+                $("#errorModal").modal("show");
+                return;
+            },
+        });
+    }
+}
+
+
 function deletePkginfoItem() {
     // do the actual pkginfo item deletion
     $('.modal-backdrop').remove();
-    var pkginfoItemURL = '/pkgsinfo/' + current_pathname;
-    var deletePkg = $('#delete_pkg').is(':checked');
+    var pkginfoItemURL = '/api/pkgsinfo/' + current_pathname;
+    var delete_pkg = $('#delete_pkg').is(':checked');
+    var installer_item_path = $('#pathname').data('installer-item-path');
     $.ajax({
-      type: 'POST',
-      url: pkginfoItemURL,
-      data: JSON.stringify({'deletePkg': deletePkg}),
-      headers: {'X_METHODOVERRIDE': 'DELETE'},
-      success: function(data) {
-          if (data['result'] == 'failed') {
-                $("#errorModalTitleText").text("Pkginfo delete error");
-                $("#errorModalDetailText").text(data['detail']);
-                $("#errorModal").modal("show");
-                return;
-          }
-          rebuildCatalogs();
-          window.location.hash = '';
-          $('#pkginfo_item_detail').html('');
-          $('#list_items').DataTable().ajax.reload();
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
-      },
-      dataType: 'json'
+        type: 'POST',
+        url: pkginfoItemURL,
+        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        success: function(data) {
+            if (delete_pkg) {
+                deleteInstallerItem(installer_item_path);
+            }
+            rebuildCatalogs();
+            window.location.hash = '';
+            $('#pkginfo_item_detail').html('');
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            try {
+                var json_data = $.parseJSON(jqXHR.responseText)
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalTitleText").text("Pkginfo delete error");
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
+                // do nothing
+            }
+            //alert("ERROR: " + textStatus + "\n" + errorThrown);
+            $("#errorModalTitleText").text("Pkginfo delete error");
+            $("#errorModalDetailText").text(textStatus);
+            $("#errorModal").modal("show");
+            return;
+        },
     });
 }

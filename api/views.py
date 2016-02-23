@@ -10,6 +10,8 @@ from api.models import Plist, MunkiFile
 from api.models import FileError, FileWriteError, \
                        FileAlreadyExistsError, \
                        FileDoesNotExistError, FileDeleteError
+                       
+from munkiwebadmin.django_basic_auth import logged_in_or_basicauth
 
 import datetime
 import json
@@ -73,7 +75,7 @@ def convert_strings_to_dates(jdata):
         return jdata
 
 
-#@login_required
+@logged_in_or_basicauth()
 @csrf_exempt
 def plist_api(request, kind, filepath=None):
     if kind not in ['manifests', 'pkgsinfo']:
@@ -94,6 +96,8 @@ def plist_api(request, kind, filepath=None):
                 response = convert_dates_to_strings(response)
         else:
             filter_terms = request.GET.copy()
+            if '_' in filter_terms.keys():
+                del filter_terms['_']
             if 'api_fields' in filter_terms.keys():
                 api_fields = filter_terms['api_fields'].split(',')
                 del filter_terms['api_fields']
@@ -157,61 +161,77 @@ def plist_api(request, kind, filepath=None):
 
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
-        #if not request.user.has_perm('manifest.change_manifestfile'):
-        #    raise PermissionDenied
-        if filepath:
+        if kind == 'manifests':
+            if not request.user.has_perm('manifest.change_manifestfile'):
+                raise PermissionDenied
+        if kind == 'pkgsinfo':
+            if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
+                raise PermissionDenied
+        request_data = {}
+        if request.body:
+            if request_type == 'json':
+                request_data = json.loads(request.body)
+                request_data = convert_strings_to_dates(request_data)
+            else:
+                request_data = plistlib.readPlistFromString(request.body)
+        if (filepath and 'filename' in request_data
+                and filepath != request_data['filename']):
             return HttpResponse(
                 json.dumps({'result': 'failed',
-                            'exception_type': 'WrongHTTPMethodType',
-                            'detail': 'This should be a PUT or PATCH request'}
+                            'exception_type': 'AmbiguousResourceName',
+                            'detail': 'File name was specified in both URI and content data'}
                           ),
                 content_type='application/json', status=400)
-        if request_type == 'json':
-            request_data = json.loads(request.body)
-            request_data = convert_strings_to_dates(request_data)
-        else:
-            request_data = plistlib.readPlistFromString(request.body)
-        if request_data:
+        if filepath is None and 'filename' not in request_data:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'NoResourceName',
+                            'detail': 'File name was not specified in URI or content data'}
+                          ),
+                content_type='application/json', status=400)
+        if 'filename' in request_data:
             filepath = request_data['filename']
             del request_data['filename']
-            try:
-                #Plist.new(
-                #    kind, filepath, request.user, manifest_data=json_data)
-                Plist.new(kind, filepath, None, plist_data=request_data)
-            except FileAlreadyExistsError, err:
+        try:
+            Plist.new(kind, filepath, request.user, plist_data=request_data)
+        except FileAlreadyExistsError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json',
+                status=409)
+        except FileWriteError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        except FileError, err:
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': str(type(err)),
+                            'detail': str(err)}),
+                content_type='application/json', status=403)
+        else:
+            if response_type == 'json':
+                request_data = convert_dates_to_strings(request_data)
                 return HttpResponse(
-                    json.dumps({'result': 'failed',
-                                'exception_type': str(type(err)),
-                                'detail': str(err)}),
-                    content_type='application/json',
-                    status=409)
-            except FileWriteError, err:
-                return HttpResponse(
-                    json.dumps({'result': 'failed',
-                                'exception_type': str(type(err)),
-                                'detail': str(err)}),
-                    content_type='application/json', status=403)
-            except FileError, err:
-                return HttpResponse(
-                    json.dumps({'result': 'failed',
-                                'exception_type': str(type(err)),
-                                'detail': str(err)}),
-                    content_type='application/json', status=403)
+                    json.dumps(request_data) + '\n',
+                    content_type='application/json', status=201)
             else:
-                if response_type == 'json':
-                    request_data = convert_dates_to_strings(request_data)
-                    return HttpResponse(
-                        json.dumps(request_data) + '\n',
-                        content_type='application/json', status=201)
-                else:
-                    return HttpResponse(
-                        plistlib.writePlistToString(request_data),
-                        content_type='application/xml', status=201)
+                return HttpResponse(
+                    plistlib.writePlistToString(request_data),
+                    content_type='application/xml', status=201)
 
     elif request.method == 'PUT':
         LOGGER.debug("Got API PUT request for %s", kind)
-        #if not request.user.has_perm('manifest.change_manifestfile'):
-        #    raise PermissionDenied
+        if kind == 'manifests':
+            if not request.user.has_perm('manifest.change_manifestfile'):
+                raise PermissionDenied
+        if kind == 'pkgsinfo':
+            if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
+                raise PermissionDenied
         if not filepath:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -224,7 +244,7 @@ def plist_api(request, kind, filepath=None):
             request_data = convert_strings_to_dates(request_data)
         else:
             request_data = plistlib.readPlistFromString(request.body)
-        if not json_data:
+        if not request_data:
             # need to deal with this issue
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -240,8 +260,7 @@ def plist_api(request, kind, filepath=None):
         
         try:
             data = plistlib.writePlistToString(request_data)
-            #Plist.write(data, kind, filepath, request.user)
-            Plist.write(data, kind, filepath, None)
+            Plist.write(data, kind, filepath, request.user)
         except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -261,8 +280,12 @@ def plist_api(request, kind, filepath=None):
 
     elif request.method == 'PATCH':
         LOGGER.debug("Got API PATCH request for %s" % kind)
-        #if not request.user.has_perm('manifest.change_manifestfile'):
-        #    raise PermissionDenied
+        if kind == 'manifests':
+            if not request.user.has_perm('manifest.change_manifestfile'):
+                raise PermissionDenied
+        if kind == 'pkgsinfo':
+            if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
+                raise PermissionDenied
         if not filepath:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -294,8 +317,7 @@ def plist_api(request, kind, filepath=None):
         plist_data.update(request_data)
         try:
             data = plistlib.writePlistToString(plist_data)
-            #Plist.write(data, kind, filepath, request.user)
-            Plist.write(data, kind, filepath, None)
+            Plist.write(data, kind, filepath, request.user)
         except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -315,8 +337,12 @@ def plist_api(request, kind, filepath=None):
 
     elif request.method == 'DELETE':
         LOGGER.debug("Got API DELETE request for %s", kind)
-        #if not request.user.has_perm('manifest.delete_manifestfile'):
-        #    raise PermissionDenied
+        if kind == 'manifests':
+            if not request.user.has_perm('manifest.delete_manifestfile'):
+                raise PermissionDenied
+        if kind == 'pkgsinfo':
+            if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
+                raise PermissionDenied
         if not filepath:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -325,8 +351,7 @@ def plist_api(request, kind, filepath=None):
                           ),
                 content_type='application/json', status=403)
         try:
-            #Plist.delete(kind, filepath, request.user)
-            Plist.delete(kind, filepath, None)
+            Plist.delete(kind, filepath, request.user)
         except FileDoesNotExistError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -350,7 +375,7 @@ def plist_api(request, kind, filepath=None):
             return HttpResponse(status=204)
 
 
-#@login_required
+@logged_in_or_basicauth()
 @csrf_exempt
 def file_api(request, kind, filepath=None):
     if kind not in ['icons', 'pkgs']:

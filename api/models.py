@@ -10,6 +10,7 @@ import plistlib
 from xml.parsers.expat import ExpatError
 
 from munkiwebadmin.utils import MunkiGit
+from process.utils import record_status
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 
@@ -57,11 +58,14 @@ class Plist(object):
         '''Returns a list of available plists'''
         kind_dir = os.path.join(REPO_DIR, kind)
         plists = []
-        skipdirs = ['.svn', '.git', '.AppleDouble']
         for dirpath, dirnames, filenames in os.walk(kind_dir):
-            for skipdir in skipdirs:
-                if skipdir in dirnames:
-                    dirnames.remove(skipdir)
+            record_status(
+                '%s_list_process' % kind, 
+                message='Scanning %s...' % dirpath[len(kind_dir)+1:])
+            for dirname in dirnames:
+                # don't recurse into directories that start with a period.
+                if dirname.startswith('.'):
+                    dirnames.remove(dirname)
             subdir = dirpath[len(kind_dir):]
             plists.extend([os.path.join(subdir, name).lstrip('/')
                           for name in filenames if not name.startswith('.')])
@@ -133,7 +137,7 @@ class Plist(object):
 
     @classmethod
     def write(cls, data, kind, pathname, user):
-        '''Writes a plist file'''
+        '''Writes a text data to (plist) file'''
         kind_dir = os.path.join(REPO_DIR, kind)
         filepath = os.path.join(kind_dir, pathname)
         plist_parent_dir = os.path.dirname(filepath)
