@@ -79,7 +79,7 @@ $(document).ready(function() {
     $(window).on('hashchange', function() {
         hash = window.location.hash;
         if (hash.length > 1) {
-            getManifestItem(hash.slice(1));
+            //getManifestItem(hash.slice(1));
         }
     });
 

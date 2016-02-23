@@ -30,7 +30,7 @@ $(document).ready(function() {
     $(window).on('hashchange', function() {
         hash = window.location.hash;
         if (hash.length > 1) {
-            getPkginfoItem(hash.slice(1));
+            //getPkginfoItem(hash.slice(1));
         }
     });
     
@@ -672,18 +672,27 @@ function massEditCatalogs() {
                             'catalogs_to_add': catalogs_to_add,
                             'catalogs_to_delete': catalogs_to_delete}),
       success: function(data) {
-          if (data['result'] == 'failed') {
-                $("#errorModalTitleText").text("Pkginfo editing error");
-                $("#errorModalDetailText").text(data['detail']);
-                $("#errorModal").modal("show");
-                return;
-          }
           rebuildCatalogs();
           window.location.hash = '';
           $('#pkginfo_item_detail').html('');
       },
       error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
+         try {
+              var json_data = $.parseJSON(jqXHR.responseText)
+              if (json_data['result'] == 'failed') {
+                  $("#errorModalTitleText").text("Mass edit error");
+                  $("#errorModalDetailText").text(json_data['detail']);
+                  $("#errorModal").modal("show");
+                  return;
+              }
+          } catch(err) {
+              // do nothing
+          }
+          //alert("ERROR: " + textStatus + "\n" + errorThrown);
+          $("#errorModalTitleText").text("Mass edit error");
+          $("#errorModalDetailText").text(textStatus);
+          $("#errorModal").modal("show");
+          return;
       },
       dataType: 'json'
     });
@@ -700,18 +709,27 @@ function deletePkginfoList() {
                             'deletePkg': deletePkg}),
       headers: {'X_METHODOVERRIDE': 'DELETE'},
       success: function(data) {
-          if (data['result'] == 'failed') {
-                $("#errorModalTitleText").text("Pkginfo delete error");
-                $("#errorModalDetailText").text(data['detail']);
-                $("#errorModal").modal("show");
-                return;
-          }
           rebuildCatalogs();
           window.location.hash = '';
           $('#pkginfo_item_detail').html('');
       },
       error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
+          try {
+              var json_data = $.parseJSON(jqXHR.responseText)
+              if (json_data['result'] == 'failed') {
+                  $("#errorModalTitleText").text("Mass delete error");
+                  $("#errorModalDetailText").text(json_data['detail']);
+                  $("#errorModal").modal("show");
+                  return;
+              }
+          } catch(err) {
+              // do nothing
+          }
+          //alert("ERROR: " + textStatus + "\n" + errorThrown);
+          $("#errorModalTitleText").text("Mass delete error");
+          $("#errorModalDetailText").text(textStatus);
+          $("#errorModal").modal("show");
+          return;
       },
       dataType: 'json'
     });
