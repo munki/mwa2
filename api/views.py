@@ -1,7 +1,10 @@
-from django.http import HttpResponse, Http404
+"""
+api/views.py
+"""
+from django.http import HttpResponse
 from django.http import QueryDict
 from django.http import FileResponse
-from django.contrib.auth.decorators import login_required
+#from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
 
@@ -10,7 +13,7 @@ from api.models import Plist, MunkiFile
 from api.models import FileError, FileWriteError, \
                        FileAlreadyExistsError, \
                        FileDoesNotExistError, FileDeleteError
-                       
+
 from munkiwebadmin.django_basic_auth import logged_in_or_basicauth
 
 import datetime
@@ -24,7 +27,7 @@ import re
 LOGGER = logging.getLogger('munkiwebadmin')
 
 
-def normalizeValueForFiltering(value):
+def normalize_value_for_filtering(value):
     '''Converts value to a list of strings'''
     if isinstance(value, (int, float, bool, basestring, dict)):
         return [str(value).lower()]
@@ -56,7 +59,7 @@ def convert_strings_to_dates(jdata):
     '''Attempt to automatically convert JSON date strings to date objects for
     plists'''
     iso_date_pattern = re.compile(
-        "^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\dZ*$")
+        r"^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\dZ*$")
     if isinstance(jdata, dict):
         for key, value in jdata.items():
             if ('date' in key.lower() and isinstance(value, basestring)
@@ -71,13 +74,14 @@ def convert_strings_to_dates(jdata):
             # we don't support lists of dates, so no need to check
             # for those
             if isinstance(value, (list, dict)):
-                value = convert_string_to_dates(value)
+                value = convert_strings_to_dates(value)
         return jdata
 
 
 @logged_in_or_basicauth()
 @csrf_exempt
 def plist_api(request, kind, filepath=None):
+    '''Basic API calls for working with Munki plist files'''
     if kind not in ['manifests', 'pkgsinfo']:
         return HttpResponse(status=404)
 
@@ -106,7 +110,7 @@ def plist_api(request, kind, filepath=None):
             item_list = Plist.list(kind)
             response = []
             for item_name in item_list:
-                if (api_fields == ['filename'] 
+                if (api_fields == ['filename']
                         and filter_terms.keys() in ([], ['filename'])):
                     # don't read each manifest if all we want is filenames
                     plist = {'filename': item_name}
@@ -123,9 +127,9 @@ def plist_api(request, kind, filepath=None):
                         if key not in plist:
                             matches_filters = False
                             continue
-                        plist_value = normalizeValueForFiltering(plist[key])
+                        plist_value = normalize_value_for_filtering(plist[key])
                         match = next(
-                            (item for item in plist_value 
+                            (item for item in plist_value
                              if value.lower() in item.lower()), None)
                         if not match:
                             matches_filters = False
@@ -177,17 +181,19 @@ def plist_api(request, kind, filepath=None):
         if (filepath and 'filename' in request_data
                 and filepath != request_data['filename']):
             return HttpResponse(
-                json.dumps({'result': 'failed',
-                            'exception_type': 'AmbiguousResourceName',
-                            'detail': 'File name was specified in both URI and content data'}
-                          ),
+                json.dumps({
+                    'result': 'failed',
+                    'exception_type': 'AmbiguousResourceName',
+                    'detail':
+                    'File name was specified in both URI and content data'}),
                 content_type='application/json', status=400)
         if filepath is None and 'filename' not in request_data:
             return HttpResponse(
-                json.dumps({'result': 'failed',
-                            'exception_type': 'NoResourceName',
-                            'detail': 'File name was not specified in URI or content data'}
-                          ),
+                json.dumps({
+                    'result': 'failed',
+                    'exception_type': 'NoResourceName',
+                    'detail':
+                    'File name was not specified in URI or content data'}),
                 content_type='application/json', status=400)
         if 'filename' in request_data:
             filepath = request_data['filename']
@@ -249,15 +255,15 @@ def plist_api(request, kind, filepath=None):
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': 'NoRequestBody',
-                            'detail': 
+                            'detail':
                                 'Request body was empty or missing valid data'}
                           ),
                 content_type='application/json', status=400)
-        if 'filename' in request_data :
+        if 'filename' in request_data:
             # perhaps support rename here in the future, but for now,
             # ignore it
             del request_data['filename']
-        
+
         try:
             data = plistlib.writePlistToString(request_data)
             Plist.write(data, kind, filepath, request.user)
@@ -279,7 +285,7 @@ def plist_api(request, kind, filepath=None):
                     content_type='application/xml')
 
     elif request.method == 'PATCH':
-        LOGGER.debug("Got API PATCH request for %s" % kind)
+        LOGGER.debug("Got API PATCH request for %s", kind)
         if kind == 'manifests':
             if not request.user.has_perm('manifest.change_manifestfile'):
                 raise PermissionDenied
@@ -303,7 +309,7 @@ def plist_api(request, kind, filepath=None):
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': 'NoRequestBody',
-                            'detail': 
+                            'detail':
                                 'Request body was empty or missing valid data'}
                           ),
                 content_type='application/json', status=400)
@@ -378,6 +384,7 @@ def plist_api(request, kind, filepath=None):
 @logged_in_or_basicauth()
 @csrf_exempt
 def file_api(request, kind, filepath=None):
+    '''Basic API calls for working with non-plist Munki files'''
     if kind not in ['icons', 'pkgs']:
         return HttpResponse(status=404)
     if request.method == 'GET':
@@ -391,7 +398,8 @@ def file_api(request, kind, filepath=None):
                                 'detail': '%s does not exist' % filepath}),
                     content_type='application/json', status=404)
             try:
-                response = FileResponse(open(fullpath, 'rb'),
+                response = FileResponse(
+                    open(fullpath, 'rb'),
                     content_type=mimetypes.guess_type(fullpath)[0])
                 response['Content-Length'] = os.path.getsize(fullpath)
                 response['Content-Disposition'] = (
