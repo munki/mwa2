@@ -1,7 +1,6 @@
 """
 api/models.py
 """
-from django.db import models
 from django.conf import settings
 
 import os
@@ -60,7 +59,7 @@ class Plist(object):
         plists = []
         for dirpath, dirnames, filenames in os.walk(kind_dir):
             record_status(
-                '%s_list_process' % kind, 
+                '%s_list_process' % kind,
                 message='Scanning %s...' % dirpath[len(kind_dir)+1:])
             for dirname in dirnames:
                 # don't recurse into directories that start with a period.
@@ -68,7 +67,7 @@ class Plist(object):
                     dirnames.remove(dirname)
             subdir = dirpath[len(kind_dir):]
             plists.extend([os.path.join(subdir, name).lstrip('/')
-                          for name in filenames if not name.startswith('.')])
+                           for name in filenames if not name.startswith('.')])
         return plists
 
     @classmethod
@@ -124,7 +123,7 @@ class Plist(object):
         kind_dir = os.path.join(REPO_DIR, kind)
         filepath = os.path.join(kind_dir, pathname)
         if not os.path.exists(filepath):
-            raise FileDoesNotExistError()
+            raise FileDoesNotExistError('%s/%s not found' % (kind, pathname))
         try:
             plistdata = plistlib.readPlist(filepath)
             return plistdata
@@ -195,12 +194,12 @@ class MunkiFile(object):
                     dirnames.remove(skipdir)
             subdir = dirpath[len(files_dir):]
             files.extend([os.path.join(subdir, name).lstrip('/')
-                         for name in filenames if not name.startswith('.')])
+                          for name in filenames if not name.startswith('.')])
         return files
 
     @classmethod
     def new(cls, kind, fileupload, pathname, user):
-        '''Creates a new file from a file upload; returns 
+        '''Creates a new file from a file upload; returns
         FileAlreadyExistsError if the file already exists at the path'''
         filepath = os.path.join(REPO_DIR, kind, pathname)
         if os.path.exists(filepath):

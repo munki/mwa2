@@ -1,14 +1,10 @@
 """
 manifests/views.py
 """
-from django.http import HttpResponse, Http404
-#from django.http import QueryDict
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-#from django.views.decorators.csrf import csrf_exempt
-#from django.core.exceptions import PermissionDenied
 
-#from manifests.models import Manifest, MANIFEST_LIST_STATUS_TAG
 from api.models import Plist, FileDoesNotExistError, FileReadError
 from process.models import Process
 
@@ -36,29 +32,32 @@ def status(request):
 
 
 @login_required
-def index(request):
-    '''Returns list of available manifests'''
+def index(request, manifest_path=None):
+    '''Returns manifest list or detail'''
+    if manifest_path and request.is_ajax():
+        # return manifest detail
+        if request.method == 'GET':
+            LOGGER.debug("Got read request for %s", manifest_path)
+            try:
+                plist = Plist.read('manifests', manifest_path)
+            except (FileDoesNotExistError, FileReadError), err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=404)
+            manifest_text = plistlib.writePlistToString(plist)
+            context = {'plist_text': manifest_text,
+                       'pathname': manifest_path}
+            return render(request, 'manifests/detail.html', context=context)
+        if request.method == 'POST':
+            return HttpResponse(
+                json.dumps({'result': 'failed',
+                            'exception_type': 'MethodNotSupported',
+                            'detail': 'POST/PUT/DELETE should use the API'}),
+                content_type='application/json', status=404)
+    # return list of available manifests
     LOGGER.debug("Got index request for manifests")
-    context = {'page': 'manifests'}
+    context = {'page': 'manifests',
+               'manifest_name': manifest_path}
     return render(request, 'manifests/manifests.html', context=context)
-
-
-@login_required
-def detail(request, manifest_path):
-    '''Returns data on a given manifest'''
-    if request.method == 'GET':
-        LOGGER.debug("Got read request for %s", manifest_path)
-        try:
-            plist = Plist.read('manifests', manifest_path)
-        except FileDoesNotExistError:
-            raise Http404("%s does not exist" % manifest_path)
-        manifest_text = plistlib.writePlistToString(plist)
-        context = {'plist_text': manifest_text,
-                   'pathname': manifest_path}
-        return render(request, 'manifests/detail.html', context=context)
-    if request.method == 'POST':
-        return HttpResponse(
-            json.dumps({'result': 'failed',
-                        'exception_type': 'MethodNotSupported',
-                        'detail': 'POST/PUT/DELETE should use the API'}),
-            content_type='application/json', status=404)

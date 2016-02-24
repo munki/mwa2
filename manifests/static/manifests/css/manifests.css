@@ -41,5 +41,8 @@ tbody.connectable {
 
 .plist-editor tr[data-path="included_manifests"] tr:hover td.row-controls span.row_link_btn {
     visibility: visible;
-    color: blue;
+    color: gray;
+    position: relative;
+    top: 4px;
+    left: -2px;
 }

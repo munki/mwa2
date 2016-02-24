@@ -20,7 +20,7 @@ $(document).ready(function() {
     do_resize();
     
     $('#manifest_search_btn').click( function(){
-      searchManifests();
+        searchManifests();
     });
     //...or when they press the return key in the form field.
     $('#manifest-search-text').keydown( function(event){
@@ -34,16 +34,16 @@ $(document).ready(function() {
     
     // Submit the new manifest form when the user clicks the Create button...
     $('[data-new="manifest"]').click( function(){
-      newManifestItem();
+        newManifestItem();
     });
     //...or when they press the return key in the form field.
     $('#new-manifest-name').keydown( function(event){
-      if(event.keyCode == 13) {
-        // Prevent the browser from attempting to submit the form
-        event.preventDefault();
-        event.stopPropagation();
-        newManifestItem();
-      }
+        if (event.keyCode == 13) {
+            // Prevent the browser from attempting to submit the form
+            event.preventDefault();
+            event.stopPropagation();
+            newManifestItem();
+        }
     });
 
     // Note the use of $(document).on() below: This is to address the fact
@@ -52,34 +52,36 @@ $(document).ready(function() {
     // Submit the duplicate manifest form when the user clicks the Duplicate
     // button...
     $(document).on('click', '[data-copy="manifest"]', function(){
-      duplicateManifestItem();
+        duplicateManifestItem();
     });
 
     //...or when they press the return key in the form field.
     $(document).on('keydown', '#manifest-copy-name', function(event) {
-      if (event.keyCode == 13) {
-        // Prevent the browser from attempting to submit the form
-        event.preventDefault();
-        event.stopPropagation();
-        duplicateManifestItem();
-      }
+        if (event.keyCode == 13) {
+            // Prevent the browser from attempting to submit the form
+            event.preventDefault();
+            event.stopPropagation();
+            duplicateManifestItem();
+        }
     });
 
     // When a modal is shown, and it contains an <input>, make sure it's
     // selected when the modal is shown.
     $(document).on('shown.bs.modal', '.modal', function(event){
-      $(event.currentTarget).find('input').select();
+        $(event.currentTarget).find('input').select();
     });
     
     // make included manifests link buttons clickable
-    $(document).on('click', 'span.row_link_btn', function(event){
-        linkToIncludedManifest($(event.currentTarget));
-    });
+    //$(document).on('click', 'span.row_link_btn', function(event){
+    //    linkToIncludedManifest($(event.currentTarget));
+    //});
 
     $(window).on('hashchange', function() {
         hash = window.location.hash;
         if (hash.length > 1) {
-            //getManifestItem(hash.slice(1));
+            if (hash.slice(1) != current_pathname) {
+                getManifestItem(hash.slice(1));
+            }
         }
     });
 
@@ -91,12 +93,13 @@ function linkToIncludedManifest(target) {
     var tableRow = $(target).closest('tr'),
         manifest_path = $(tableRow).find('.value').val();
     getManifestItem(manifest_path);
-    window.location.hash = manifest_path;
+    //window.location.hash = manifest_path;
 }
 
 
 var render_name = function(data, type, full, meta) {
-    return '<a href="#' + data + '" onClick="getManifestItem(\'' + data + '\')">' + data + '</a>';
+    //return '<a href="#' + data + '" onClick="getManifestItem(\'' + data + '\')">' + data + '</a>';
+    return '<a href="#' + data + '">' + data + '</a>';
 }
 
 
@@ -412,8 +415,12 @@ function addIncludedManifestLinks(editor) {
     $(rows).each(function() {
         var row_controls = $(this).find('.row-controls');
         $(row_controls).each(function() {
-            var link_btn = $('<span>',
-                             {'class': 'row_link_btn glyphicon glyphicon-circle-arrow-right'});
+            var tableRow = $(this).closest('tr'),
+                manifest_path = $(tableRow).find('.value').val();
+            //alert(manifest_path);
+            //var link_btn = $('<span>',
+            //                 {'class': 'row_link_btn glyphicon glyphicon-circle-arrow-right'});
+            var link_btn = $('<a href="#' + manifest_path + '"><span class="row_link_btn glyphicon glyphicon-circle-arrow-right"/></a>')
             $(this).append(link_btn);
         });
     });
@@ -499,11 +506,25 @@ function getManifestItem(pathname) {
             $('#editortabs a[href="' + selected_tab_viewname + '"]').tab('show');
             setupView(selected_tab_viewname);
             do_resize();
+            window.history.replaceState({'manifest_detail': data}, manifestItemURL, '/manifests/');
+            window.location.hash = pathname;
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            alert("ERROR: " + textStatus + "\n" + errorThrown);
             $('#manifest_detail').html("")
             current_pathname = "";
+            $("#errorModalTitleText").text("Manifest read error");
+             try {
+                 var json_data = $.parseJSON(jqXHR.responseText)
+                 if (json_data['result'] == 'failed') {
+                     $("#errorModalDetailText").text(json_data['detail']);
+                     $("#errorModal").modal("show");
+                     return;
+                 }
+             } catch(err) {
+                 // do nothing
+             }
+             $("#errorModalDetailText").text(errorThrown);
+             $("#errorModal").modal("show");
         },
         dataType: 'html'
     });
@@ -541,13 +562,13 @@ function duplicateManifestItem() {
         success: function(data) {
             $('#list_items').DataTable().ajax.reload();
             getManifestItem(pathname);
-            window.location.hash = pathname;
+            //window.location.hash = pathname;
         },
         error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Manifest creation error");
             try {
                 var json_data = $.parseJSON(jqXHR.responseText)
                 if (json_data['result'] == 'failed') {
-                    $("#errorModalTitleText").text("Manifest creation error");
                     $("#errorModalDetailText").text(json_data['detail']);
                     $("#errorModal").modal("show");
                     return;
@@ -555,11 +576,8 @@ function duplicateManifestItem() {
             } catch(err) {
                 // do nothing
             }
-            //alert("ERROR: " + textStatus + "\n" + errorThrown);
-            $("#errorModalTitleText").text("Manifest creation error");
-            $("#errorModalDetailText").text(textStatus);
+            $("#errorModalDetailText").text(errorThrown);
             $("#errorModal").modal("show");
-            return;
         }
     });
 }
@@ -570,41 +588,38 @@ function saveManifestItem() {
     //var postdata = JSON.stringify({'plist_data': plist_data})
     var manifestItemURL = '/api/manifests/' + current_pathname;
     $.ajax({
-      method: 'POST',
-      url: manifestItemURL,
-      headers: {'X_METHODOVERRIDE': 'PUT',
-                'Content-Type': 'application/xml',
-                'Accept': 'application/xml'},
-      data: plist_data,
-      timeout: 10000,
-      success: function(data) {
-        hideSaveOrCancelBtns();
-        if (requested_pathname.length) {
-            getManifestItem(requested_pathname);
-        } else {
-            //trigger a rebuild/redraw
-            //plistChanged();
-            //hideSaveOrCancelBtns();
-        }
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-          try {
-              var json_data = $.parseJSON(jqXHR.responseText)
-              if (json_data['result'] == 'failed') {
-                  $("#errorModalTitleText").text("Manifest save error");
-                  $("#errorModalDetailText").text(json_data['detail']);
-                  $("#errorModal").modal("show");
-                  return;
-              }
-          } catch(err) {
+        method: 'POST',
+        url: manifestItemURL,
+        headers: {'X_METHODOVERRIDE': 'PUT',
+                  'Content-Type': 'application/xml',
+                  'Accept': 'application/xml'},
+        data: plist_data,
+        timeout: 10000,
+        success: function(data) {
+            hideSaveOrCancelBtns();
+            if (requested_pathname.length) {
+                getManifestItem(requested_pathname);
+            } else {
+                //trigger a rebuild/redraw
+                //plistChanged();
+                //hideSaveOrCancelBtns();
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Manifest save error");
+            try {
+                var json_data = $.parseJSON(jqXHR.responseText)
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
               // do nothing
-          }
-          //alert("ERROR: " + textStatus + "\n" + errorThrown);
-          $("#errorModalTitleText").text("Manifest save error");
-          $("#errorModalDetailText").text(textStatus);
-          $("#errorModal").modal("show");
-          return;
-      },
+            }
+            $("#errorModalDetailText").text(errorThrown);
+            $("#errorModal").modal("show");
+        },
     });
 }
 
@@ -637,20 +652,19 @@ function newManifestItem() {
     var manifestItemURL = '/api/manifests/' + pathname;
 
     $.ajax({
-      method: 'POST',
-      url: manifestItemURL,
-      timeout: 10000,
-      cache: false,
-      success: function(data) {
-          $('#list_items').DataTable().ajax.reload();
-          getManifestItem(pathname);
-          window.location.hash = pathname;
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-          try {
+        method: 'POST',
+        url: manifestItemURL,
+        timeout: 10000,
+        cache: false,
+        success: function(data) {
+            $('#list_items').DataTable().ajax.reload();
+            getManifestItem(pathname);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Manifest creation error");
+            try {
                 var json_data = $.parseJSON(jqXHR.responseText)
                 if (json_data['result'] == 'failed') {
-                    $("#errorModalTitleText").text("Manifest creation error");
                     $("#errorModalDetailText").text(json_data['detail']);
                     $("#errorModal").modal("show");
                     return;
@@ -658,12 +672,9 @@ function newManifestItem() {
             } catch(err) {
                 // do nothing
             }
-            //alert("ERROR: " + textStatus + "\n" + errorThrown);
-            $("#errorModalTitleText").text("Manifest creation error");
-            $("#errorModalDetailText").text(textStatus);
+            $("#errorModalDetailText").text(errorThrown);
             $("#errorModal").modal("show");
-            return;
-      },
+        },
     });
 }
 
@@ -672,20 +683,19 @@ function deleteManifestItem() {
     $('.modal-backdrop').remove();
     var manifestItemURL = '/api/manifests/' + current_pathname;
     $.ajax({
-      method: 'POST',
-      url: manifestItemURL,
-      data: '',
-      headers: {'X_METHODOVERRIDE': 'DELETE'},
-      success: function(data) {
-          window.location.hash = '';
-          $('#manifest_detail').html('');
-          $('#list_items').DataTable().ajax.reload();
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-          try {
+        method: 'POST',
+        url: manifestItemURL,
+        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        success: function(data) {
+            window.location.hash = '';
+            $('#manifest_detail').html('');
+            $('#list_items').DataTable().ajax.reload();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Manifest delete error");
+            try {
                 var json_data = $.parseJSON(jqXHR.responseText)
                 if (json_data['result'] == 'failed') {
-                    $("#errorModalTitleText").text("Manifest delete error");
                     $("#errorModalDetailText").text(json_data['detail']);
                     $("#errorModal").modal("show");
                     return;
@@ -693,13 +703,8 @@ function deleteManifestItem() {
             } catch(err) {
                 // do nothing
             }
-            //alert("ERROR: " + textStatus + "\n" + errorThrown);
-            $("#errorModalTitleText").text("Manifest delete error");
-            $("#errorModalDetailText").text(textStatus);
+            $("#errorModalDetailText").text(errorThrown);
             $("#errorModal").modal("show");
-            return;
-
-      },
-      dataType: 'json'
+        }
     });
 }

@@ -154,14 +154,10 @@
         var _rowControls = $('<td>', 
                              {'class': 'row-controls', 'width': '20px'}),
             del_btn = $('<span>',
-                        {'class': 'row_del_btn glyphicon glyphicon-remove-circle'}),
-            link_btn = $('<span>',
-                         {'class': 'row_link_btn glyphicon glyphicon-link'});
-        //btn.append(delSpan);
+                        {'class': 'row_del_btn glyphicon glyphicon-remove-circle'});
+
         _rowControls.append(del_btn);
-        //_rowControls.append(link_btn);
         del_btn.click(deleteRow(opt));
-        //link_btn.click(linkRow(opt));
         return _rowControls;
     }
 

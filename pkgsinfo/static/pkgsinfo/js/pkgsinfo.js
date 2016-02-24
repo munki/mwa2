@@ -14,7 +14,6 @@ $(document).ready(function() {
     if (hash.length > 1) {
         getPkginfoItem(hash.slice(1));
     }
-    //getCatalogNames();
     getCatalogData();
     $('#listSearchField').focus();
     do_resize();
@@ -26,11 +25,13 @@ $(document).ready(function() {
     $('#massaction_dropdown').on('click', enableMassActionMenuItems);
     $('#mass_edit_catalogs').on('click', openMassEditModal);
     $(".chosen-select").chosen({width: "100%"});
-    
+
     $(window).on('hashchange', function() {
         hash = window.location.hash;
         if (hash.length > 1) {
-            //getPkginfoItem(hash.slice(1));
+            if (hash.slice(1) != current_pathname) {
+                getPkginfoItem(hash.slice(1));
+            }
         }
     });
     
@@ -178,10 +179,11 @@ var render_versions = function(data, type, row, meta) {
     var catalog_filter = $('#catalog_dropdown').data('value');
     for(var i = 0; i < data.length; i++) {
         if (catalog_filter == 'all' || data[i][1].indexOf(catalog_filter) != -1) {
-            html += '<li class="pkginfo_items" data-path=\'' + data[i][2] + '\'>'
-            html += '<a href="#' + data[i][2] 
-            html += '" onClick="getPkginfoItem(\'' + data[i][2] + '\')">' 
-            html += data[i][0] + '</a>'
+            html += '<li class="pkginfo_items" data-path=\'' + data[i][2] + '\'>';
+            html += '<a href="#' + data[i][2];
+            //html += '" onClick="getPkginfoItem(\'' + data[i][2] + '\')">';
+            html += '">';
+            html += data[i][0] + '</a>';
             html += '<input type="checkbox" class="pull-right"/></li>\n';
         }
     }
@@ -348,38 +350,51 @@ function getPkginfoItem(pathname) {
     }
     var pkginfoItemURL = '/pkgsinfo/' + pathname;
     $.ajax({
-      type: 'GET',
-      url: pkginfoItemURL,
-      timeout: 10000,
-      cache: false,
-      success: function(data) {
-          $('#pkginfo_item_detail').html(data);
-          val = $('#plist').text();
-          try { js_obj = PlistParser.parse(val); }
-          catch (e) { 
+        type: 'GET',
+        url: pkginfoItemURL,
+        timeout: 10000,
+        cache: false,
+        success: function(data) {
+            $('#pkginfo_item_detail').html(data);
+            val = $('#plist').text();
+            try { js_obj = PlistParser.parse(val); }
+            catch (e) { 
                 //alert('Error in parsing plist. ' + e);
                 js_obj = null;
-          }
-          $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-              //e.target // newly activated tab
-              //e.relatedTarget // previous active tab
-              setupView(e.target.hash);
-          })
-          editor = initializeAceEditor('plist', plistChanged);
-          hideSaveOrCancelBtns();
-          detectUnsavedChanges();
-          current_pathname = pathname;
-          requested_pathname = "";
-          $('#editortabs a[href="' + selected_tab_viewname + '"]').tab('show');
-          setupView(selected_tab_viewname);
-          do_resize();
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        alert("ERROR: " + textStatus + "\n" + errorThrown);
-        $('#pkginfo_item_detail').html("")
-        current_pathname = "";
-      },
-      dataType: 'html'
+            }
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                //e.target // newly activated tab
+                //e.relatedTarget // previous active tab
+                setupView(e.target.hash);
+            })
+            editor = initializeAceEditor('plist', plistChanged);
+            hideSaveOrCancelBtns();
+            detectUnsavedChanges();
+            current_pathname = pathname;
+            requested_pathname = "";
+            $('#editortabs a[href="' + selected_tab_viewname + '"]').tab('show');
+            setupView(selected_tab_viewname);
+            do_resize();
+            window.history.replaceState({'pkginfo_detail': data}, pkginfoItemURL, '/pkgsinfo/');
+            window.location.hash = pathname;
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $('#pkginfo_item_detail').html("")
+            current_pathname = "";
+            $("#errorModalTitleText").text("Pkginfo read error");
+            try {
+                var json_data = $.parseJSON(jqXHR.responseText)
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
+                // do nothing
+            }
+            $("#errorModalDetailText").text(errorThrown);
+            $("#errorModal").modal("show");
+        },
     });
 }
 
@@ -578,7 +593,6 @@ function savePkginfoItem() {
     // save pkginfo item back to the repo
     $('.modal-backdrop').remove();
     var plist_data = editor.getValue();
-    //var postdata = JSON.stringify({'plist_data': plist_data});
     var pkginfoItemURL = '/api/pkgsinfo/' + current_pathname;
     $.ajax({
         type: 'POST',
@@ -596,22 +610,19 @@ function savePkginfoItem() {
             }
         },
         error: function(jqXHR, textStatus, errorThrown) {
-              try {
-                  var json_data = $.parseJSON(jqXHR.responseText)
-                  if (json_data['result'] == 'failed') {
-                      $("#errorModalTitleText").text("Pkginfo write error");
-                      $("#errorModalDetailText").text(json_data['detail']);
-                      $("#errorModal").modal("show");
-                      return;
-                  }
-              } catch(err) {
-                  // do nothing
-              }
-              //alert("ERROR: " + textStatus + "\n" + errorThrown);
-              $("#errorModalTitleText").text("Pkginfo write error");
-              $("#errorModalDetailText").text(textStatus);
-              $("#errorModal").modal("show");
-              return;
+            $("#errorModalTitleText").text("Pkginfo write error");
+             try {
+                 var json_data = $.parseJSON(jqXHR.responseText)
+                 if (json_data['result'] == 'failed') {
+                     $("#errorModalDetailText").text(json_data['detail']);
+                     $("#errorModal").modal("show");
+                     return;
+                 }
+             } catch(err) {
+                 // do nothing
+             }
+             $("#errorModalDetailText").text(errorThrown);
+             $("#errorModal").modal("show");
           },
     });
 }
@@ -633,24 +644,24 @@ function showDeleteConfirmationModal() {
         $('#delete_pkg').attr('disabled', true);
         // ask the server for the count of references for the installer item
         $.ajax({
-          type: 'GET',
-          url: '/catalogs/get_pkg_ref_count/' + installer_item_path,
-          timeout: 10000,
-          cache: false,
-          success: function(data) {
-              if (data == 1) {
-                  // a single reference! we can enable the checkbox
-                  $('#delete_pkg').removeAttr("disabled");
-              } else {
-                  // multiple references! hide the checkbox
-                  $('#deleteConfirmationModalInstallerItem').addClass('hidden');
-              }
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            // do nothing currently, which leaves the checkbox
-            // visible but disabled. Better safe than sorry
-          },
-          dataType: 'json'
+            type: 'GET',
+            url: '/catalogs/get_pkg_ref_count/' + installer_item_path,
+            timeout: 10000,
+            cache: false,
+            success: function(data) {
+                if (data == 1) {
+                    // a single reference! we can enable the checkbox
+                    $('#delete_pkg').removeAttr("disabled");
+                } else {
+                    // multiple references! hide the checkbox
+                    $('#deleteConfirmationModalInstallerItem').addClass('hidden');
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                // do nothing currently, which leaves the checkbox
+                // visible but disabled. Better safe than sorry
+            },
+            dataType: 'json'
         });
     }
     // show the deletion confirmation dialog
@@ -666,35 +677,32 @@ function massEditCatalogs() {
     //alert(catalogs_to_delete);
     //return;
     $.ajax({
-      type: 'POST',
-      url: '/pkgsinfo/',
-      data: JSON.stringify({'pkginfo_list': pkginfo_list,
-                            'catalogs_to_add': catalogs_to_add,
-                            'catalogs_to_delete': catalogs_to_delete}),
-      success: function(data) {
-          rebuildCatalogs();
-          window.location.hash = '';
-          $('#pkginfo_item_detail').html('');
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-         try {
-              var json_data = $.parseJSON(jqXHR.responseText)
-              if (json_data['result'] == 'failed') {
-                  $("#errorModalTitleText").text("Mass edit error");
-                  $("#errorModalDetailText").text(json_data['detail']);
-                  $("#errorModal").modal("show");
-                  return;
-              }
-          } catch(err) {
-              // do nothing
-          }
-          //alert("ERROR: " + textStatus + "\n" + errorThrown);
-          $("#errorModalTitleText").text("Mass edit error");
-          $("#errorModalDetailText").text(textStatus);
-          $("#errorModal").modal("show");
-          return;
-      },
-      dataType: 'json'
+        type: 'POST',
+        url: '/pkgsinfo/',
+        data: JSON.stringify({'pkginfo_list': pkginfo_list,
+                              'catalogs_to_add': catalogs_to_add,
+                              'catalogs_to_delete': catalogs_to_delete}),
+        success: function(data) {
+            rebuildCatalogs();
+            window.location.hash = '';
+            $('#pkginfo_item_detail').html('');
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Mass edit error");
+            try {
+                var json_data = $.parseJSON(jqXHR.responseText)
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalTitleText").text("Mass edit error");
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
+                // do nothing
+            }
+            $("#errorModalDetailText").text(errorThrown);
+            $("#errorModal").modal("show");
+        },
     });
 }
 
@@ -703,35 +711,31 @@ function deletePkginfoList() {
     var pkginfo_list = get_checked_items();
     var deletePkg = $('#mass_delete_pkg').is(':checked');
     $.ajax({
-      type: 'POST',
-      url: '/pkgsinfo/',
-      data: JSON.stringify({'pkginfo_list': pkginfo_list,
-                            'deletePkg': deletePkg}),
-      headers: {'X_METHODOVERRIDE': 'DELETE'},
-      success: function(data) {
-          rebuildCatalogs();
-          window.location.hash = '';
-          $('#pkginfo_item_detail').html('');
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-          try {
-              var json_data = $.parseJSON(jqXHR.responseText)
-              if (json_data['result'] == 'failed') {
-                  $("#errorModalTitleText").text("Mass delete error");
-                  $("#errorModalDetailText").text(json_data['detail']);
-                  $("#errorModal").modal("show");
-                  return;
-              }
-          } catch(err) {
-              // do nothing
-          }
-          //alert("ERROR: " + textStatus + "\n" + errorThrown);
-          $("#errorModalTitleText").text("Mass delete error");
-          $("#errorModalDetailText").text(textStatus);
-          $("#errorModal").modal("show");
-          return;
-      },
-      dataType: 'json'
+        type: 'POST',
+        url: '/pkgsinfo/',
+        data: JSON.stringify({'pkginfo_list': pkginfo_list,
+                              'deletePkg': deletePkg}),
+        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        success: function(data) {
+            rebuildCatalogs();
+            window.location.hash = '';
+            $('#pkginfo_item_detail').html('');
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Mass delete error");
+            try {
+                var json_data = $.parseJSON(jqXHR.responseText)
+                if (json_data['result'] == 'failed') {
+                    $("#errorModalDetailText").text(json_data['detail']);
+                    $("#errorModal").modal("show");
+                    return;
+                }
+            } catch(err) {
+                // do nothing
+            }
+            $("#errorModalDetailText").text(errorThrown);
+            $("#errorModal").modal("show");
+        },
     });
 }
 
@@ -747,10 +751,10 @@ function deleteInstallerItem(installer_item_path) {
                 // do nothing
             },
             error: function(jqXHR, textStatus, errorThrown) {
+                $("#errorModalTitleText").text("Package delete error");
                 try {
                     var json_data = $.parseJSON(jqXHR.responseText)
                     if (json_data['result'] == 'failed') {
-                        $("#errorModalTitleText").text("Package delete error");
                         $("#errorModalDetailText").text(json_data['detail']);
                         $("#errorModal").modal("show");
                         return;
@@ -758,11 +762,8 @@ function deleteInstallerItem(installer_item_path) {
                 } catch(err) {
                     // do nothing
                 }
-                //alert("ERROR: " + textStatus + "\n" + errorThrown);
-                $("#errorModalTitleText").text("Package delete error");
-                $("#errorModalDetailText").text(textStatus);
+                $("#errorModalDetailText").text(errorThrown);
                 $("#errorModal").modal("show");
-                return;
             },
         });
     }
@@ -788,10 +789,10 @@ function deletePkginfoItem() {
             $('#pkginfo_item_detail').html('');
         },
         error: function(jqXHR, textStatus, errorThrown) {
+            $("#errorModalTitleText").text("Pkginfo delete error");
             try {
                 var json_data = $.parseJSON(jqXHR.responseText)
                 if (json_data['result'] == 'failed') {
-                    $("#errorModalTitleText").text("Pkginfo delete error");
                     $("#errorModalDetailText").text(json_data['detail']);
                     $("#errorModal").modal("show");
                     return;
@@ -799,11 +800,8 @@ function deletePkginfoItem() {
             } catch(err) {
                 // do nothing
             }
-            //alert("ERROR: " + textStatus + "\n" + errorThrown);
-            $("#errorModalTitleText").text("Pkginfo delete error");
-            $("#errorModalDetailText").text(textStatus);
+            $("#errorModalDetailText").text(errorThrown);
             $("#errorModal").modal("show");
-            return;
         },
     });
 }
