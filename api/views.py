@@ -166,7 +166,7 @@ def plist_api(request, kind, filepath=None):
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
         if kind == 'manifests':
-            if not request.user.has_perm('manifest.change_manifestfile'):
+            if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
         if kind == 'pkgsinfo':
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
@@ -233,7 +233,7 @@ def plist_api(request, kind, filepath=None):
     elif request.method == 'PUT':
         LOGGER.debug("Got API PUT request for %s", kind)
         if kind == 'manifests':
-            if not request.user.has_perm('manifest.change_manifestfile'):
+            if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
         if kind == 'pkgsinfo':
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
@@ -287,7 +287,7 @@ def plist_api(request, kind, filepath=None):
     elif request.method == 'PATCH':
         LOGGER.debug("Got API PATCH request for %s", kind)
         if kind == 'manifests':
-            if not request.user.has_perm('manifest.change_manifestfile'):
+            if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
         if kind == 'pkgsinfo':
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
@@ -344,7 +344,7 @@ def plist_api(request, kind, filepath=None):
     elif request.method == 'DELETE':
         LOGGER.debug("Got API DELETE request for %s", kind)
         if kind == 'manifests':
-            if not request.user.has_perm('manifest.delete_manifestfile'):
+            if not request.user.has_perm('manifests.delete_manifestfile'):
                 raise PermissionDenied
         if kind == 'pkgsinfo':
             if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
@@ -434,6 +434,8 @@ def file_api(request, kind, filepath=None):
 
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
+        if not request.user.has_perm('pkgsinfo.create_pkginfofile'):
+            raise PermissionDenied
         filename = request.POST.get('filename') or filepath
         filedata = request.FILES.get('filedata')
         if not (filename and filedata):
@@ -444,7 +446,7 @@ def file_api(request, kind, filepath=None):
                             'detail': 'Missing filename or filedata'}),
                 content_type='application/json', status=400)
         try:
-            MunkiFile.new(kind, filedata, filename, None)
+            MunkiFile.new(kind, filedata, filename, request.user)
         except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -468,8 +470,8 @@ def file_api(request, kind, filepath=None):
 
     if request.method == 'DELETE':
         LOGGER.debug("Got API DELETE request for %s", kind)
-        #if not request.user.has_perm('manifest.delete_manifestfile'):
-        #    raise PermissionDenied
+        if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
+            raise PermissionDenied
         if not filepath:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -478,8 +480,7 @@ def file_api(request, kind, filepath=None):
                           ),
                 content_type='application/json', status=403)
         try:
-            #MunkiFile.delete(kind, filepath, request.user)
-            MunkiFile.delete(kind, filepath, None)
+            MunkiFile.delete(kind, filepath, request.user)
         except FileDoesNotExistError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
