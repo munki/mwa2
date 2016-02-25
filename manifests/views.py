@@ -100,7 +100,7 @@ def detail(request, manifest_path):
             if http_method.lower() == 'delete':
                 # DELETE
                 LOGGER.debug("Got delete request for %s", manifest_path)
-                if not request.user.has_perm('manifest.delete_manifestfile'):
+                if not request.user.has_perm('manifests.delete_manifestfile'):
                     raise PermissionDenied
                 try:
                     Manifest.delete(manifest_path, request.user)
@@ -117,7 +117,7 @@ def detail(request, manifest_path):
             elif http_method.lower() == 'put':
                 # regular POST (update/change)
                 LOGGER.debug("Got write request for %s", manifest_path)
-                if not request.user.has_perm('manifest.change_manifestfile'):
+                if not request.user.has_perm('manifests.change_manifestfile'):
                     raise PermissionDenied
                 if request.is_ajax():
                     json_data = json.loads(request.body)
