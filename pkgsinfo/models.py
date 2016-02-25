@@ -31,7 +31,7 @@ def pkg_ref_count(pkginfo_path, catalog_items):
     '''Returns the number of pkginfo items containing a reference to
     the installer_item_location in pkginfo_path and the relative path to
     the installer_item_location'''
-    filepath = os.path.join(PKGSINFO_PATH, pkginfo_path)
+    filepath = os.path.join(PKGSINFO_PATH, os.path.normpath(pkginfo_path))
     try:
         plistdata = plistlib.readPlist(filepath)
     except (ExpatError, IOError):
@@ -50,8 +50,9 @@ def pkg_ref_count(pkginfo_path, catalog_items):
 def process_file(pkginfo_path):
     '''Worker function called by our multiprocessing pool. Reads a pkginfo
     file and returns a tuple of name, version, catalogs, and relative path'''
+    filepath = os.path.join(PKGSINFO_PATH, os.path.normpath(pkginfo_path))
     try:
-        pkginfo = plistlib.readPlist(os.path.join(PKGSINFO_PATH, pkginfo_path))
+        pkginfo = plistlib.readPlist(filepath)
     except (ExpatError, IOError):
         return ()
     return (pkginfo.get('name', 'NO_NAME'),

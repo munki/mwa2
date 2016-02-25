@@ -65,16 +65,21 @@ class Plist(object):
                 # don't recurse into directories that start with a period.
                 if dirname.startswith('.'):
                     dirnames.remove(dirname)
-            subdir = dirpath[len(kind_dir):]
-            plists.extend([os.path.join(subdir, name).lstrip('/')
-                           for name in filenames if not name.startswith('.')])
+            subdir = dirpath[len(kind_dir):].lstrip(os.path.sep)
+            if os.path.sep == '\\':
+                plists.extend([os.path.join(subdir, name).replace('\\', '/')
+                               for name in filenames
+                               if not name.startswith('.')])
+            else:
+                plists.extend([os.path.join(subdir, name)
+                               for name in filenames
+                               if not name.startswith('.')])
         return plists
 
     @classmethod
     def new(cls, kind, pathname, user, plist_data=None):
         '''Returns a new plist object'''
-        kind_dir = os.path.join(REPO_DIR, kind)
-        filepath = os.path.join(kind_dir, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         if os.path.exists(filepath):
             raise FileAlreadyExistsError(
                 '%s/%s already exists!' % (kind, pathname))
@@ -120,8 +125,7 @@ class Plist(object):
     @classmethod
     def read(cls, kind, pathname):
         '''Reads a plist file and returns the plist as a dictionary'''
-        kind_dir = os.path.join(REPO_DIR, kind)
-        filepath = os.path.join(kind_dir, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         if not os.path.exists(filepath):
             raise FileDoesNotExistError('%s/%s not found' % (kind, pathname))
         try:
@@ -137,8 +141,7 @@ class Plist(object):
     @classmethod
     def write(cls, data, kind, pathname, user):
         '''Writes a text data to (plist) file'''
-        kind_dir = os.path.join(REPO_DIR, kind)
-        filepath = os.path.join(kind_dir, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         plist_parent_dir = os.path.dirname(filepath)
         if not os.path.exists(plist_parent_dir):
             try:
@@ -160,8 +163,7 @@ class Plist(object):
     @classmethod
     def delete(cls, kind, pathname, user):
         '''Deletes a plist file'''
-        kind_dir = os.path.join(REPO_DIR, kind)
-        filepath = os.path.join(kind_dir, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         if not os.path.exists(filepath):
             raise FileDoesNotExistError(
                 '%s/%s does not exist' % (kind, pathname))
@@ -192,16 +194,22 @@ class MunkiFile(object):
             for skipdir in skipdirs:
                 if skipdir in dirnames:
                     dirnames.remove(skipdir)
-            subdir = dirpath[len(files_dir):]
-            files.extend([os.path.join(subdir, name).lstrip('/')
-                          for name in filenames if not name.startswith('.')])
+            subdir = dirpath[len(files_dir):].lstrip(os.path.sep)
+            if os.path.sep == '\\':
+                files.extend([os.path.join(subdir, name).replace('\\', '/')
+                              for name in filenames
+                              if not name.startswith('.')])
+            else:
+                files.extend([os.path.join(subdir, name)
+                              for name in filenames
+                              if not name.startswith('.')])
         return files
 
     @classmethod
     def new(cls, kind, fileupload, pathname, user):
         '''Creates a new file from a file upload; returns
         FileAlreadyExistsError if the file already exists at the path'''
-        filepath = os.path.join(REPO_DIR, kind, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         if os.path.exists(filepath):
             raise FileAlreadyExistsError(
                 '%s/%s already exists!' % (kind, pathname))
@@ -219,7 +227,7 @@ class MunkiFile(object):
     @classmethod
     def write(cls, kind, fileupload, pathname, user):
         '''Retreives a file upload and saves it to pathname'''
-        filepath = os.path.join(REPO_DIR, kind, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         try:
             with open(filepath, 'w') as fileref:
                 for chunk in fileupload.chunks():
@@ -232,7 +240,7 @@ class MunkiFile(object):
     @classmethod
     def delete(cls, kind, pathname, user):
         '''Deletes file at pathname'''
-        filepath = os.path.join(REPO_DIR, kind, pathname)
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
         if not os.path.exists(filepath):
             raise FileDoesNotExistError(
                 '%s/%s does not exist' % (kind, pathname))
