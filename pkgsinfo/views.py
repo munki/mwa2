@@ -2,27 +2,21 @@
 pkgsinfo/views.py
 """
 
-from django.http import HttpResponse, QueryDict, Http404
+from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 
 from pkgsinfo.models import Pkginfo, PKGSINFO_STATUS_TAG
 from process.models import Process
 from api.models import Plist, \
-                       FileError, FileDoesNotExistError, \
-                       FileReadError, FileDeleteError
-
-from xml.parsers.expat import ExpatError
+                       FileError, FileDoesNotExistError
 
 import json
 import logging
 import os
 import plistlib
 import urllib2
-import datetime
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 ICONS_DIR = os.path.join(REPO_DIR, 'icons')
@@ -158,12 +152,12 @@ def detail(request, pkginfo_path):
         except FileDoesNotExistError:
             raise Http404("%s does not exist" % pkginfo_path)
         default_items = {
-                    'display_name': '',
-                    'description': '',
-                    'category': '',
-                    'developer': '',
-                    'unattended_install': False,
-                    'unattended_uninstall': False
+            'display_name': '',
+            'description': '',
+            'category': '',
+            'developer': '',
+            'unattended_install': False,
+            'unattended_uninstall': False
         }
         for item in default_items:
             if not item in plist:
