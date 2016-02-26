@@ -7,11 +7,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 admin.autodiscover()
 
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    
+
     url(r'^login/$', django.contrib.auth.views.login, name='login'),
-    url(r'^logout/$', django.contrib.auth.views.logout_then_login, name='logout'),
+    url(r'^logout/$', django.contrib.auth.views.logout_then_login,
+        name='logout'),
+    url(r'^api/', include('api.urls')),
     url(r'^manifests/', include('manifests.urls')),
     url(r'^catalogs/', include('catalogs.urls')),
     url(r'^pkgsinfo/', include('pkgsinfo.urls')),

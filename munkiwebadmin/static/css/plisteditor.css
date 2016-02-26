@@ -79,6 +79,8 @@
 .plist-editor tr > td.row-controls button,
 .plist-editor tr > td.row-controls span {
     visibility: hidden;
+    position: relative;
+    left: -2px;
 }
 
 .plist-editor tr:hover > td.row-controls button,

@@ -25,6 +25,10 @@
 </script>
 {% endblock java_script %}
 
+{% block body_tag %}
+<body {% if manifest_name %}onLoad="getManifestItem('{{manifest_name}}')"{% endif %}>
+{% endblock %}
+
 {% block content %}
 <div class="row-fluid">
   <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">

@@ -2,15 +2,18 @@
 pkgsinfo/views.py
 """
 
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict, Http404
 from django.shortcuts import render
-from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
-from pkgsinfo.models import Pkginfo, PkginfoError, PKGSINFO_STATUS_TAG
+from pkgsinfo.models import Pkginfo, PKGSINFO_STATUS_TAG
 from process.models import Process
+from api.models import Plist, \
+                       FileError, FileDoesNotExistError, \
+                       FileReadError, FileDeleteError
 
 from xml.parsers.expat import ExpatError
 
@@ -19,6 +22,7 @@ import logging
 import os
 import plistlib
 import urllib2
+import datetime
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 ICONS_DIR = os.path.join(REPO_DIR, 'icons')
@@ -68,7 +72,7 @@ def getjson(request):
     displays the list of pkginfo items. Perhaps could be moved into the
     index methods'''
     LOGGER.debug("Got json request for pkgsinfo")
-    pkginfo_list = Pkginfo.list()
+    pkginfo_list = Pkginfo.data()
     # send it back in JSON format
     return HttpResponse(json.dumps(pkginfo_list),
                         content_type='application/json')
@@ -90,20 +94,25 @@ def index(request):
             if http_method.lower() == 'delete':
                 LOGGER.info("Got mass delete request for pkginfos")
                 if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
-                    raise PermissionDenied
+                    return HttpResponse(
+                        json.dumps({
+                            'result': 'failed',
+                            'exception_type': 'PkginfoDeletePermissionDenied',
+                            'detail': "Missing needed permissions"}),
+                        content_type='application/json', status=403)
                 json_data = json.loads(request.body)
                 pkginfo_list = json_data.get('pkginfo_list', [])
                 try:
                     Pkginfo.mass_delete(
                         pkginfo_list, request.user,
-                        delete_pkg=json_data.get('deletePkg', False)
+                        delete_pkgs=json_data.get('deletePkg', False)
                     )
-                except PkginfoError, err:
+                except FileError, err:
                     return HttpResponse(
                         json.dumps({'result': 'failed',
                                     'exception_type': str(type(err)),
                                     'detail': str(err)}),
-                        content_type='application/json')
+                        content_type='application/json', status=403)
                 else:
                     return HttpResponse(
                         json.dumps({'result': 'success'}),
@@ -111,7 +120,12 @@ def index(request):
         # regular POST (update/change)
         LOGGER.info("Got mass update request for pkginfos")
         if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
-            raise PermissionDenied
+            return HttpResponse(
+                json.dumps({
+                    'result': 'failed',
+                    'exception_type': 'PkginfoEditPermissionDenied',
+                    'detail': "Missing needed permissions"}),
+                content_type='application/json', status=403)
         json_data = json.loads(request.body)
         pkginfo_list = json_data.get('pkginfo_list', [])
         catalogs_to_add = json_data.get('catalogs_to_add', [])
@@ -122,12 +136,12 @@ def index(request):
             Pkginfo.mass_edit_catalogs(
                 pkginfo_list, catalogs_to_add, catalogs_to_delete,
                 request.user)
-        except PkginfoError, err:
+        except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),
                             'detail': str(err)}),
-                content_type='application/json')
+                content_type='application/json', status=403)
         else:
             return HttpResponse(
                 json.dumps({'result': 'success'}),
@@ -139,66 +153,32 @@ def detail(request, pkginfo_path):
     '''Return detail for a specific pkginfo'''
     if request.method == 'GET':
         LOGGER.debug("Got read request for %s", pkginfo_path)
-        pkginfo = Pkginfo.read(pkginfo_path)
-        if pkginfo is None:
-            raise Http404("%s does not exist" % pkginfo_path)
         try:
-            pkginfo_plist = plistlib.readPlistFromString(pkginfo)
-            installer_item_path = pkginfo_plist.get(
-                'installer_item_location', '')
-            icon_url = get_icon_url(pkginfo_plist)
-        except (ExpatError, IOError):
-            installer_item_path = ''
-            icon_url = STATIC_URL + 'img/GenericPkg.png'
-        context = {'plist_text': pkginfo,
+            plist = Plist.read('pkgsinfo', pkginfo_path)
+        except FileDoesNotExistError:
+            raise Http404("%s does not exist" % pkginfo_path)
+        default_items = {
+                    'display_name': '',
+                    'description': '',
+                    'category': '',
+                    'developer': '',
+                    'unattended_install': False,
+                    'unattended_uninstall': False
+        }
+        for item in default_items:
+            if not item in plist:
+                plist[item] = default_items[item]
+        pkginfo_text = plistlib.writePlistToString(plist)
+        installer_item_path = plist.get('installer_item_location', '')
+        icon_url = get_icon_url(plist)
+        context = {'plist_text': pkginfo_text,
                    'pathname': pkginfo_path,
                    'installer_item_path': installer_item_path,
                    'icon_url': icon_url}
         return render(request, 'pkgsinfo/detail.html', context=context)
     if request.method == 'POST':
-        # DELETE
-        if request.META.has_key('HTTP_X_METHODOVERRIDE'):
-            http_method = request.META['HTTP_X_METHODOVERRIDE']
-            if http_method.lower() == 'delete':
-                LOGGER.info("Got delete request for %s", pkginfo_path)
-                if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
-                    raise PermissionDenied
-                json_data = json.loads(request.body)
-                try:
-                    Pkginfo.delete(
-                        pkginfo_path, request.user,
-                        delete_pkg=json_data.get('deletePkg', False)
-                    )
-                except PkginfoError, err:
-                    return HttpResponse(
-                        json.dumps({'result': 'failed',
-                                    'exception_type': str(type(err)),
-                                    'detail': str(err)}),
-                        content_type='application/json')
-                else:
-                    return HttpResponse(
-                        json.dumps({'result': 'success'}),
-                        content_type='application/json')
-
-        # regular POST (update/change)
-        LOGGER.info("Got write request for %s", pkginfo_path)
-        if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
-            raise PermissionDenied
-        if request.is_ajax():
-            json_data = json.loads(request.body)
-            if json_data and 'plist_data' in json_data:
-                plist_data = json_data['plist_data'].encode('utf-8')
-                try:
-                    Pkginfo.write(
-                        plist_data, pkginfo_path, request.user)
-                except PkginfoError, err:
-                    return HttpResponse(
-                        json.dumps({'result': 'failed',
-                                    'exception_type': str(type(err)),
-                                    'detail': str(err)}),
-                        content_type='application/json')
-                else:
-                    return HttpResponse(
-                        json.dumps({'result': 'success'}),
-                        content_type='application/json')
-
+        return HttpResponse(
+            json.dumps({'result': 'failed',
+                        'exception_type': 'MethodNotSupported',
+                        'detail': 'POST/PUT/DELETE should use the API'}),
+            content_type='application/json', status=404)
