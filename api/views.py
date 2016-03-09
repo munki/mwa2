@@ -78,8 +78,8 @@ def convert_strings_to_dates(jdata):
         return jdata
 
 
-@logged_in_or_basicauth()
 @csrf_exempt
+@logged_in_or_basicauth()
 def plist_api(request, kind, filepath=None):
     '''Basic API calls for working with Munki plist files'''
     if kind not in ['manifests', 'pkgsinfo']:
@@ -381,8 +381,8 @@ def plist_api(request, kind, filepath=None):
             return HttpResponse(status=204)
 
 
-@logged_in_or_basicauth()
 @csrf_exempt
+@logged_in_or_basicauth()
 def file_api(request, kind, filepath=None):
     '''Basic API calls for working with non-plist Munki files'''
     if kind not in ['icons', 'pkgs']:
