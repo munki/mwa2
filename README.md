@@ -6,7 +6,7 @@ All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdm
 
 MunkiWebAdmin2 focuses on web-based editing of manifests and pkginfo files.
 
-This is in-developement code. Please do not point it at a production Munki repo.
+This is in-development code. Please do not point it at a production Munki repo.
 
 ## Getting started
 
@@ -33,7 +33,7 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 #### run_mwa2.sh script details
 
-*   Clones `https://github.com/munki/mwa2.git` from GitHub into the script directory (if needed)
+*   Clones `https://github.com/munki/mwa2.git` from GitHub into the script directory. (if needed)
 *   Copies `settings_template.py` to `settings.py` and asks you to edit it. (if needed)
 *   Creates the needed sqlite3 database. (if needed)
 *   Prompts you to create the initial superuser. (if needed)
