@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 
 
 from api.models import Plist, MunkiFile
-from api.models import FileError, FileWriteError, \
+from api.models import FileError, FileWriteError, FileReadError, \
                        FileAlreadyExistsError, \
                        FileDoesNotExistError, FileDeleteError
 
@@ -95,7 +95,20 @@ def plist_api(request, kind, filepath=None):
     if request.method == 'GET':
         LOGGER.debug("Got API GET request for %s", kind)
         if filepath:
-            response = Plist.read(kind, filepath)
+            try:
+                response = Plist.read(kind, filepath)
+            except FileDoesNotExistError, err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=404)
+            except FileReadError, err:
+                return HttpResponse(
+                    json.dumps({'result': 'failed',
+                                'exception_type': str(type(err)),
+                                'detail': str(err)}),
+                    content_type='application/json', status=403)
             if response_type == 'json':
                 response = convert_dates_to_strings(response)
         else:
