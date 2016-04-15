@@ -39,6 +39,11 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 *   Prompts you to create the initial superuser. (if needed)
 *   Uses the included CherryPy dev server to serve MWA2.
 
+## Docker
+
+A Docker file for running MWA2 under Docker is available here: https://github.com/macadmins/docker-mwa2  
+This is maintained by a third-party; please direct support questions about the Docker file to the maintainers of that project.
+
 ## Acknowledgements
 
 MunkiWebAdmin2 makes use of the following open source components:
