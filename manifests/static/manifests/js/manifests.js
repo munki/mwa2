@@ -685,7 +685,7 @@ function deleteManifestItem() {
     $.ajax({
         method: 'POST',
         url: manifestItemURL,
-        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        headers: {'X-METHODOVERRIDE': 'DELETE'},
         success: function(data) {
             window.location.hash = '';
             $('#manifest_detail').html('');
