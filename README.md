@@ -6,7 +6,7 @@ All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdm
 
 MunkiWebAdmin2 focuses on web-based editing of manifests and pkginfo files.
 
-This is in-development code. Please do not point it at a production Munki repo.
+This is in-development code. Use it with production Munki repo with care -- make sure you have functioning backups!
 
 ## Getting started
 
@@ -67,7 +67,3 @@ Additionally, the demo files make use of:
 *   django-wsgiserver - https://pypi.python.org/pypi/django-wsgiserver 
      -- with a small modification by me to get it to run on Django 1.9 - specifically changing line 326 of `django_wsgiserver/management/commands/runwsgiserver.py` from:
     `self.validate(display_num_errors=True)` to `self.check(display_num_errors=True)`
-
-
-
-    
