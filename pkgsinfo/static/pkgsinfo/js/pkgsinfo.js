@@ -597,7 +597,7 @@ function savePkginfoItem() {
     $.ajax({
         type: 'POST',
         url: pkginfoItemURL,
-        headers: {'X_METHODOVERRIDE': 'PUT',
+        headers: {'X-METHODOVERRIDE': 'PUT',
                   'Content-Type': 'application/xml',
                   'Accept': 'application/xml'},
         data: plist_data,
@@ -715,7 +715,7 @@ function deletePkginfoList() {
         url: '/pkgsinfo/',
         data: JSON.stringify({'pkginfo_list': pkginfo_list,
                               'deletePkg': deletePkg}),
-        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        headers: {'X-METHODOVERRIDE': 'DELETE'},
         success: function(data) {
             rebuildCatalogs();
             window.location.hash = '';
@@ -746,7 +746,7 @@ function deleteInstallerItem(installer_item_path) {
         $.ajax({
             type: 'POST',
             url: the_url,
-            headers: {'X_METHODOVERRIDE': 'DELETE'},
+            headers: {'X-METHODOVERRIDE': 'DELETE'},
             success: function(data) {
                 // do nothing
             },
@@ -779,7 +779,7 @@ function deletePkginfoItem() {
     $.ajax({
         type: 'POST',
         url: pkginfoItemURL,
-        headers: {'X_METHODOVERRIDE': 'DELETE'},
+        headers: {'X-METHODOVERRIDE': 'DELETE'},
         success: function(data) {
             if (delete_pkg) {
                 deleteInstallerItem(installer_item_path);

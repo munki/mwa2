@@ -590,7 +590,7 @@ function saveManifestItem() {
     $.ajax({
         method: 'POST',
         url: manifestItemURL,
-        headers: {'X_METHODOVERRIDE': 'PUT',
+        headers: {'X-METHODOVERRIDE': 'PUT',
                   'Content-Type': 'application/xml',
                   'Accept': 'application/xml'},
         data: plist_data,
