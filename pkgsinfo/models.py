@@ -100,8 +100,8 @@ class Pkginfo(Plist):
         all_catalog = os.path.join(CATALOGS_PATH, 'all')
         try:
             all_items = plistlib.readPlist(all_catalog)
-        except (OSError, IOError):
-            return []
+        except (ExpatError, OSError, IOError):
+            all_items = []
         use_slower_approach = False
         if len(all_items) != len(files):
             LOGGER.debug('number of files differ from all catalog')
