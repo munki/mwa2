@@ -98,7 +98,10 @@ class Pkginfo(Plist):
         files = cls.list('pkgsinfo')
         record(message='Processing %s files' % len(files))
         all_catalog = os.path.join(CATALOGS_PATH, 'all')
-        all_items = plistlib.readPlist(all_catalog)
+        try:
+            all_items = plistlib.readPlist(all_catalog)
+        except (OSError, IOError):
+            return []
         use_slower_approach = False
         if len(all_items) != len(files):
             LOGGER.debug('number of files differ from all catalog')

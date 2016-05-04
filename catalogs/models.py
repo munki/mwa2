@@ -58,6 +58,8 @@ class Catalog(object):
     def next_catalog_contents(cls):
         '''Generator that returns the next catalog name and its contents'''
         catalogs_path = os.path.join(REPO_DIR, 'catalogs')
+        if not os.path.isdir(catalogs_path):
+            return
         for name in os.listdir(catalogs_path):
             if name.startswith("._") or name == ".DS_Store" or name == 'all':
                 # don't process these
