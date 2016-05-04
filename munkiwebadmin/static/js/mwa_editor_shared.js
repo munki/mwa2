@@ -85,14 +85,11 @@ function initializeAceEditor(element_id, change_fn) {
 
 
 function detectUnsavedChanges() {
-    /*$('#item_editor').on('keyup keydown', 'input, textarea', function (e) {
-        if (e.keyCode < 37 || e.keyCode > 40) {
-            showSaveOrCancelBtns()
-        }
-    });*/
-    $(window).on('beforeunload', function () {
+    $(window).on('beforeunload', function (event) {
         if ($('#save_and_cancel') && !$('#save_and_cancel').hasClass('hidden')) {
-            return 'You haven\'t saved your changes.';
+            var message = 'You haven\'t saved your changes.';
+            event.returnValue = message;
+            return message;
         }
     });
 }
