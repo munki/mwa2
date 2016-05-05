@@ -10,7 +10,7 @@ This is in-development code. Use it with production Munki repo with care -- make
 
 ## Getting started
 
-On OS X (10.7+):
+###On OS X (10.7+):
 
 *   Download and expand this zip:    
     https://github.com/munki/contrib/raw/master/mwa2_demo.zip
@@ -38,6 +38,10 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 *   Creates the needed sqlite3 database. (if needed)
 *   Prompts you to create the initial superuser. (if needed)
 *   Uses the included CherryPy dev server to serve MWA2.
+
+###Linux
+
+See https://github.com/munki/mwa2/wiki/RHEL7-setup-notes for some notes on installing and configuring MWA2 on RedHad Enterprise Linux 7.
 
 ## Docker
 
