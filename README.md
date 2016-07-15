@@ -6,7 +6,7 @@ All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdm
 
 MunkiWebAdmin2 focuses on web-based editing of manifests and pkginfo files.
 
-This is in-development code. Use it with production Munki repo with care -- make sure you have functioning backups!
+This is in-development code. Use it with a production Munki repo with care -- make sure you have functioning backups!
 
 ## Getting started
 
@@ -25,7 +25,8 @@ This is in-development code. Use it with production Munki repo with care -- make
 MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 ```
 
-*   Edit `MUNKI_REPO_DIR` to point to a Munki repo to use with MWA2. Please don't point it at your production repo unless you like living very dangerously. This repo should be writable by the user running MWA2.
+*   Edit `MUNKI_REPO_DIR` to point to a Munki repo to use with MWA2. This repo should be writable by the user running MWA2. Please do initial testing on a non-production repo. Since MWA2 can make changes to your repo, if you do decide to use it with a production repo -- make sure you have functioning backups!
+
 
 *   After editing `settings.py`, run `run_mwa2.sh` again to continue the setup process.
 
