@@ -12,6 +12,8 @@ This is in-development code. Use it with a production Munki repo with care -- ma
 
 ###On OS X (10.7+):
 
+*   You'll need `git` installed; either via Xcode, the command-line developer tools, or a standalone install of `git`.
+
 *   Download and expand this zip:    
     https://github.com/munki/contrib/raw/master/mwa2_demo.zip
 
@@ -34,7 +36,7 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 #### run_mwa2.sh script details
 
-*   Clones `https://github.com/munki/mwa2.git` from GitHub into the script directory. (if needed)
+*   git clones `https://github.com/munki/mwa2.git` from GitHub into the script directory. (if needed)
 *   Copies `settings_template.py` to `settings.py` and asks you to edit it. (if needed)
 *   Creates the needed sqlite3 database. (if needed)
 *   Prompts you to create the initial superuser. (if needed)
