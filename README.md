@@ -12,6 +12,8 @@ This is in-development code. Use it with a production Munki repo with care -- ma
 
 ###On OS X (10.7+):
 
+*   You'll need `git` installed; either via Xcode, the command-line developer tools, or a standalone install of `git`.
+
 *   Download and expand this zip:    
     https://github.com/munki/contrib/raw/master/mwa2_demo.zip
 
@@ -34,7 +36,7 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 #### run_mwa2.sh script details
 
-*   Clones `https://github.com/munki/mwa2.git` from GitHub into the script directory. (if needed)
+*   git clones `https://github.com/munki/mwa2.git` from GitHub into the script directory. (if needed)
 *   Copies `settings_template.py` to `settings.py` and asks you to edit it. (if needed)
 *   Creates the needed sqlite3 database. (if needed)
 *   Prompts you to create the initial superuser. (if needed)
@@ -42,7 +44,7 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 
 ###Linux
 
-See https://github.com/munki/mwa2/wiki/RHEL7-setup-notes for some notes on installing and configuring MWA2 on RedHad Enterprise Linux 7.
+See https://github.com/munki/mwa2/wiki/RHEL7-setup-notes for some notes on installing and configuring MWA2 on RedHat Enterprise Linux 7.
 
 ## Docker
 
@@ -56,7 +58,7 @@ MunkiWebAdmin2 makes use of the following open source components:
 *   Python (tested version 2.7.10) - https://www.python.org
 *   Django (tested version 1.9.1) - https://www.djangoproject.com
 *   jQuery (version 1.11.3 included) - http://jquery.com
-*   JQuery-UI (version 1.11.4 included) - http://jqueryui.com
+*   jQuery-UI (version 1.11.4 included) - http://jqueryui.com
 *   Bootstrap (version 3.3.6 included) - http://getbootstrap.com
 *   Bootstrap itself includes Glyphicons - http://glyphicons.com
 *   DataTables (version 1.10.10 included) - http://datatables.net
