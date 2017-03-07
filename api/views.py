@@ -133,7 +133,8 @@ def plist_api(request, kind, filepath=None):
                     response.append(plist)
                 else:
                     plist = Plist.read(kind, item_name)
-                    plist = convert_dates_to_strings(plist)
+                    if response_type == 'json':
+                        plist = convert_dates_to_strings(plist)
                     if kind == 'catalogs':
                         # catalogs are list objects, not dicts
                         plist = {'contents': plist}
@@ -405,6 +406,11 @@ def file_api(request, kind, filepath=None):
     '''Basic API calls for working with non-plist Munki files'''
     if kind not in ['icons', 'pkgs']:
         return HttpResponse(status=404)
+
+    response_type = 'json'
+    if request.META.get('HTTP_ACCEPT') == 'application/xml':
+        response_type = 'xml_plist'
+
     if request.method == 'GET':
         LOGGER.debug("Got API GET request for %s", kind)
         if filepath:
@@ -431,8 +437,12 @@ def file_api(request, kind, filepath=None):
                     content_type='application/json', status=403)
         else:
             response = MunkiFile.list(kind)
-            return HttpResponse(json.dumps(response) + '\n',
-                                content_type='application/json')
+            if response_type == 'json':
+                return HttpResponse(json.dumps(response) + '\n',
+                                    content_type='application/json')
+            else:
+                return HttpResponse(plistlib.writePlistToString(response),
+                                    content_type='application/xml')
 
     if request.META.has_key('HTTP_X_METHODOVERRIDE'):
         # support browsers/libs that don't directly support the other verbs
