@@ -82,7 +82,7 @@ def convert_strings_to_dates(jdata):
 @logged_in_or_basicauth()
 def plist_api(request, kind, filepath=None):
     '''Basic API calls for working with Munki plist files'''
-    if kind not in ['manifests', 'pkgsinfo']:
+    if kind not in ['manifests', 'pkgsinfo', 'catalogs']:
         return HttpResponse(status=404)
 
     response_type = 'json'
@@ -134,6 +134,9 @@ def plist_api(request, kind, filepath=None):
                 else:
                     plist = Plist.read(kind, item_name)
                     plist = convert_dates_to_strings(plist)
+                    if kind == 'catalogs':
+                        # catalogs are list objects, not dicts
+                        plist = {'contents': plist}
                     plist['filename'] = item_name
                     matches_filters = True
                     for key, value in filter_terms.items():
@@ -178,6 +181,8 @@ def plist_api(request, kind, filepath=None):
 
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
+        if kind == 'catalogs':
+            raise PermissionDenied
         if kind == 'manifests':
             if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
