@@ -182,12 +182,10 @@ def plist_api(request, kind, filepath=None):
 
     if request.method == 'POST':
         LOGGER.debug("Got API POST request for %s", kind)
-        if kind == 'catalogs':
-            raise PermissionDenied
         if kind == 'manifests':
             if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
-        if kind == 'pkgsinfo':
+        if kind in ('catalogs', 'pkgsinfo'):
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
                 raise PermissionDenied
         request_data = {}
@@ -254,7 +252,7 @@ def plist_api(request, kind, filepath=None):
         if kind == 'manifests':
             if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
-        if kind == 'pkgsinfo':
+        if kind in ('catalogs', 'pkgsinfo'):
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
                 raise PermissionDenied
         if not filepath:
@@ -308,7 +306,7 @@ def plist_api(request, kind, filepath=None):
         if kind == 'manifests':
             if not request.user.has_perm('manifests.change_manifestfile'):
                 raise PermissionDenied
-        if kind == 'pkgsinfo':
+        if kind in ('catalogs', 'pkgsinfo'):
             if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
                 raise PermissionDenied
         if not filepath:
@@ -364,6 +362,9 @@ def plist_api(request, kind, filepath=None):
         LOGGER.debug("Got API DELETE request for %s", kind)
         if kind == 'manifests':
             if not request.user.has_perm('manifests.delete_manifestfile'):
+                raise PermissionDenied
+        if kind == 'catalogs':
+            if not request.user.has_perm('pkgsinfo.change_pkginfofile'):
                 raise PermissionDenied
         if kind == 'pkgsinfo':
             if not request.user.has_perm('pkgsinfo.delete_pkginfofile'):
@@ -466,6 +467,7 @@ def file_api(request, kind, filepath=None):
             raise PermissionDenied
         filename = request.POST.get('filename') or filepath
         filedata = request.FILES.get('filedata')
+        LOGGER.debug("Filename is %s" % filename)
         if not (filename and filedata):
             # malformed request
             return HttpResponse(
