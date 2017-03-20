@@ -10,7 +10,7 @@ This is in-development code. Use it with a production Munki repo with care -- ma
 
 ## Getting started
 
-###On OS X (10.7+):
+### On OS X (10.7+):
 
 *   You'll need `git` installed; either via Xcode, the command-line developer tools, or a standalone install of `git`.
 
@@ -42,7 +42,7 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 *   Prompts you to create the initial superuser. (if needed)
 *   Uses the included CherryPy dev server to serve MWA2.
 
-###Linux
+### Linux
 
 See https://github.com/munki/mwa2/wiki/RHEL7-setup-notes for some notes on installing and configuring MWA2 on RedHat Enterprise Linux 7.
 
