@@ -30,7 +30,7 @@ class MunkiGit(object):
         returns a dictionary with the keys 'output', 'error', and
         'returncode'. You can optionally pass an array into customArgs to
         override the self.args value without overwriting them."""
-        custom_args = self.args if custom_args == None else custom_args
+        custom_args = self.args if custom_args is None else custom_args
         proc = subprocess.Popen([self.cmd] + custom_args,
                                 shell=False,
                                 bufsize=-1,
@@ -42,6 +42,13 @@ class MunkiGit(object):
         self.results = {"output": output,
                         "error": error, "returncode": proc.returncode}
         return self.results
+
+    def path_is_gitignored(self, a_path):
+        """Returns True if path will be ignored by Git (usually due to being
+        in a .gitignore file)"""
+        self.git_repo_dir = os.path.dirname(a_path)
+        self.run_git(['check-ignore', a_path])
+        return self.results['returncode'] == 0
 
     def path_is_in_git_repo(self, a_path):
         """Returns True if the path is in a Git repo, false otherwise."""
@@ -94,23 +101,25 @@ class MunkiGit(object):
     def add_file_at_path(self, a_path, committer):
         """Commits a file to the Git repo."""
         if self.path_is_in_git_repo(a_path):
-            self.git_repo_dir = os.path.dirname(a_path)
-            self.run_git(['add', a_path])
-            if self.results['returncode'] == 0:
-                self.commit_file_at_path(a_path, committer)
-            else:
-                LOGGER.info("Git error: %s", self.results['error'])
+            if not self.path_is_gitignored(a_path):
+                self.git_repo_dir = os.path.dirname(a_path)
+                self.run_git(['add', a_path])
+                if self.results['returncode'] == 0:
+                    self.commit_file_at_path(a_path, committer)
+                else:
+                    LOGGER.info("Git error: %s", self.results['error'])
         else:
             LOGGER.debug("%s is not in a git repo.", a_path)
 
     def delete_file_at_path(self, a_path, committer):
         """Deletes a file from the filesystem and Git repo."""
         if self.path_is_in_git_repo(a_path):
-            self.git_repo_dir = os.path.dirname(a_path)
-            self.run_git(['rm', a_path])
-            if self.results['returncode'] == 0:
-                self.commit_file_at_path(a_path, committer)
-            else:
-                LOGGER.info("Git error: %s", self.results['error'])
+            if not self.path_is_gitignored(a_path):
+                self.git_repo_dir = os.path.dirname(a_path)
+                self.run_git(['rm', a_path])
+                if self.results['returncode'] == 0:
+                    self.commit_file_at_path(a_path, committer)
+                else:
+                    LOGGER.info("Git error: %s", self.results['error'])
         else:
             LOGGER.debug("%s is not in a git repo.", a_path)
