@@ -61,10 +61,9 @@ class Plist(object):
             record_status(
                 '%s_list_process' % kind,
                 message='Scanning %s...' % dirpath[len(kind_dir)+1:])
-            for dirname in dirnames:
-                # don't recurse into directories that start with a period.
-                if dirname.startswith('.'):
-                    dirnames.remove(dirname)
+            # don't recurse into directories that start with a period.
+            dirnames[:] = [name for name in dirnames
+                           if not name.startswith('.')]
             subdir = dirpath[len(kind_dir):].lstrip(os.path.sep)
             if os.path.sep == '\\':
                 plists.extend([os.path.join(subdir, name).replace('\\', '/')
@@ -189,11 +188,9 @@ class MunkiFile(object):
         '''Returns a list of available plists'''
         files_dir = os.path.join(REPO_DIR, kind)
         files = []
-        skipdirs = ['.svn', '.git', '.AppleDouble']
         for dirpath, dirnames, filenames in os.walk(files_dir):
-            for skipdir in skipdirs:
-                if skipdir in dirnames:
-                    dirnames.remove(skipdir)
+            # don't recurse into directories that start with a period.
+            dirnames[:] = [name for name in dirnames if not name.startswith('.')]
             subdir = dirpath[len(files_dir):].lstrip(os.path.sep)
             if os.path.sep == '\\':
                 files.extend([os.path.join(subdir, name).replace('\\', '/')
