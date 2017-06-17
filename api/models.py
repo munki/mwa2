@@ -73,7 +73,8 @@ class Plist(object):
                 plists.extend([os.path.join(subdir, name)
                                for name in filenames
                                if not name.startswith('.')])
-        return plists
+        '''Sort returned plists to be consistent regardless of filesystem'''
+        return sorted(plists)
 
     @classmethod
     def new(cls, kind, pathname, user, plist_data=None):
