@@ -200,6 +200,7 @@ var js_obj = {};
 // seperately
 var key_list = {'catalogs': 'Catalogs',
                 'included_manifests': 'Included Manifests',
+                'featured_items': 'Featured Items',
                 'managed_installs': 'Managed Installs',
                 'managed_uninstalls': 'Managed Uninstalls',
                 'managed_updates': 'Managed Updates',
@@ -212,6 +213,7 @@ var keys_and_types = {'catalogs': ['catalogname'],
                       'conditional_items': [{'condition': 'os_vers_minor > 9',
                                              'managed_installs': ['itemname']}],
                       'included_manifests': ['manifestname'],
+                      'featured_items': ['itemname'],
                       'managed_installs': ['itemname'],
                       'managed_uninstalls': ['itemname'],
                       'managed_updates': ['itemname'],
@@ -305,7 +307,8 @@ var validator = function(path, val) {
         var manifest_names = $('#data_storage').data('manifest_names');
         if (manifest_names && manifest_names.indexOf(val) == -1) return 'danger';
     }
-    if (path_items.indexOf('managed_installs') != -1 ||
+    if (path_items.indexOf('featured_items') != -1 ||
+        path_items.indexOf('managed_installs') != -1 ||
         path_items.indexOf('managed_uninstalls') != -1 ||
         path_items.indexOf('managed_updates') != -1 ||
         path_items.indexOf('optional_installs') != -1) {
@@ -356,6 +359,7 @@ function setupTypeahead() {
 function connectSortables() {
     // Connect our sortable lists of installer items so we can drag items
     // between them
+    $('tr[data-path="featured_items"] tbody').addClass('connectable');
     $('tr[data-path="managed_installs"] tbody').addClass('connectable');
     $('tr[data-path="managed_uninstalls"] tbody').addClass('connectable');
     $('tr[data-path="managed_updates"] tbody').addClass('connectable');
