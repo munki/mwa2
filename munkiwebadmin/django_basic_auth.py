@@ -21,11 +21,15 @@ def view_or_basicauth(view, request, test_func, realm="", *args, **kwargs):
         return view(request, *args, **kwargs)
 
     # They are not logged in. See if they provided login credentials
-    #
-    if 'HTTP_AUTHORIZATION' in request.META:
-        auth = request.META['HTTP_AUTHORIZATION'].split()
+    # Some web server configurations strip the auth header before we can use
+    # it. Turning that config off may not be desirable always. So support an
+    # alternate auth header as well: X-Authorization
+    if ('HTTP_AUTHORIZATION' in request.META or
+            'HTTP_X_AUTHORIZATION' in request.META):
+        auth = (request.META.get('HTTP_AUTHORIZATION') or
+                request.META.get('HTTP_X_AUTHORIZATION')).split()
         if len(auth) == 2:
-            # NOTE: We are only support basic authentication for now.
+            # NOTE: We only support basic authentication for now.
             #
             if auth[0].lower() == "basic":
                 try:
