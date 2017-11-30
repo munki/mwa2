@@ -461,12 +461,16 @@ def file_api(request, kind, filepath=None):
             request.META['REQUEST_METHOD'] = 'PATCH'
             request.PATCH = QueryDict(request.body)
 
-    if request.method == 'POST':
-        LOGGER.debug("Got API POST request for %s", kind)
+    if request.method in ('POST', 'PUT'):
+        LOGGER.debug("Got API %s request for %s", request.method, kind)
         if not request.user.has_perm('pkgsinfo.create_pkginfofile'):
             raise PermissionDenied
-        filename = request.POST.get('filename') or filepath
-        filedata = request.FILES.get('filedata')
+        if request.method == 'POST':
+            filename = request.POST.get('filename') or filepath
+            filedata = request.FILES.get('filedata')
+        else:
+            filename = filepath
+            filedata = request.body
         LOGGER.debug("Filename is %s" % filename)
         if not (filename and filedata):
             # malformed request
@@ -476,7 +480,10 @@ def file_api(request, kind, filepath=None):
                             'detail': 'Missing filename or filedata'}),
                 content_type='application/json', status=400)
         try:
-            MunkiFile.new(kind, filedata, filename, request.user)
+            if request.method == 'POST':
+                MunkiFile.new(kind, filedata, filename, request.user)
+            else:
+                MunkiFile.writedata(kind, filedata, filename, request.user)
         except FileError, err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
@@ -488,14 +495,14 @@ def file_api(request, kind, filepath=None):
                 json.dumps({'filename': filename}),
                 content_type='application/json', status=200)
 
-    if request.method in ('PUT', 'PATCH'):
-        LOGGER.debug("Got API %s request for %s", request.method, kind)
+    if request.method == 'PATCH':
+        LOGGER.debug("Got API PATCH request for %s", kind)
         response = HttpResponse(
             json.dumps({'result': 'failed',
                         'exception_type': 'NotAllowed',
                         'detail': 'This method is not supported'}),
             content_type='application/json', status=405)
-        response['Allow'] = 'GET, POST, DELETE'
+        response['Allow'] = 'GET, POST, PUT, DELETE'
         return response
 
     if request.method == 'DELETE':

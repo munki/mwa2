@@ -235,6 +235,18 @@ class MunkiFile(object):
             raise FileWriteError(err)
 
     @classmethod
+    def writedata(cls, kind, filedata, pathname, user):
+        '''Retreives a file upload and saves it to pathname'''
+        filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
+        try:
+            with open(filepath, 'w') as fileref:
+                fileref.write(filedata)
+            LOGGER.info('Wrote %s/%s', kind, pathname)
+        except (IOError, OSError), err:
+            LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
+            raise FileWriteError(err)
+
+    @classmethod
     def delete(cls, kind, pathname, user):
         '''Deletes file at pathname'''
         filepath = os.path.join(REPO_DIR, kind, os.path.normpath(pathname))
