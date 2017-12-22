@@ -3,6 +3,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 import django.contrib.auth.views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -19,7 +20,7 @@ urlpatterns = [
     url(r'^catalogs/', include('catalogs.urls')),
     url(r'^pkgsinfo/', include('pkgsinfo.urls')),
     url(r'^makecatalogs/', include('process.urls')),
-    url(r'^$', django.contrib.auth.views.login, name='login'),
+    url(r'^$', RedirectView.as_view(url='/manifests/', permanent=False), name='manifests'),
 ]
 # comment out the following if you are serving
 # static files a different way
