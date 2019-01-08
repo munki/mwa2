@@ -56,7 +56,7 @@ This is maintained by a third-party; please direct support questions about the D
 MunkiWebAdmin2 makes use of the following open source components:
 
 *   Python (tested version 2.7.10) - https://www.python.org
-*   Django (tested version 1.9.1) - https://www.djangoproject.com
+*   Django (tested versions 1.9.1 and 1.9.13) - https://www.djangoproject.com
 *   jQuery (version 1.11.3 included) - http://jquery.com
 *   jQuery-UI (version 1.11.4 included) - http://jqueryui.com
 *   Bootstrap (version 3.3.6 included) - http://getbootstrap.com
