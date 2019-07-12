@@ -5,8 +5,9 @@
 
 .plist-editor .property,
 .plist-editor .value {
-  border: none;
-  background-color: inherit;
+    border: none;
+    background-color: inherit;
+    resize: vertical;
 }
 
 .plist-editor input[type="checkbox"] {
