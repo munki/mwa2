@@ -46,4 +46,5 @@ tbody.connectable {
     position: relative;
     top: 4px;
     left: -2px;
+    resize: vertical;
 }
