@@ -236,14 +236,24 @@
     }
 
     function set_focus_on_text(root) {
-        var tablerows = $(root).find('tr');
-        if (tablerows) {
-            var td = $(tablerows[tablerows.length - 1]).children('td[data-type="string"]');
-            if (td) {
-                textarea = td.children('textarea');
-                if (textarea) {
+        let tablerows = $(root).find('tr');
+        if (tablerows.length > 0) {
+            let td = $(tablerows[tablerows.length - 1]).children('td[data-type="string"]');
+            let th = $(tablerows[tablerows.length - 1]).children('th[scope="row"]');
+            if (td.length > 0) {
+                let textarea = td.children('textarea');
+                if (textarea.length > 0) {
                     textarea[0].focus();
+                    textarea[0].select();
                 }
+            }
+            if (th.length > 0) {
+                let input = th.children('input');
+                if (input.length > 0) {
+                    input[0].scrollIntoView();
+                    input[0].select();
+                }
+
             }
         }
     }
@@ -303,6 +313,7 @@
                     addNewValue(obj);
                     construct(opt, obj, root, path);
                     opt.onchange(opt.original);
+                    set_focus_on_text(root);
                 }));
             }
         } else if (objType == 'array') {
