@@ -1,6 +1,7 @@
 #item_editor,
 #item_list {
     overflow-y: scroll;
+    overflow-x:hidden;
 }
 
 /* fix for DataTables duplicate sorting controls */
