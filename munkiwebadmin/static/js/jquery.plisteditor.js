@@ -243,7 +243,6 @@
                 textarea = td.children('textarea');
                 if (textarea) {
                     textarea[0].focus();
-                    textarea[0].select();
                 }
             }
         }
