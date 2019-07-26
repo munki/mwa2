@@ -268,7 +268,7 @@ class MunkiFile(object):
                 '%s/%s does not exist' % (kind, pathname))
         try:
             os.unlink(filepath)
-             deletedatatimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            deletedatatimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
             LOGGER.info('%s - %s: Deleted %s/%s', deletedatatimestamp, user, kind, pathname)
         except (IOError, OSError), err:
             deletedataerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
