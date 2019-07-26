@@ -56,14 +56,14 @@ This is maintained by a third-party; please direct support questions about the D
 MunkiWebAdmin2 makes use of the following open source components:
 
 *   Python (tested version 2.7.10) - https://www.python.org
-*   Django (tested version 1.9.1) - https://www.djangoproject.com
+*   Django (tested versions 1.9.1 and 1.9.13) - https://www.djangoproject.com
 *   jQuery (version 1.11.3 included) - http://jquery.com
 *   jQuery-UI (version 1.11.4 included) - http://jqueryui.com
 *   Bootstrap (version 3.3.6 included) - http://getbootstrap.com
 *   Bootstrap itself includes Glyphicons - http://glyphicons.com
 *   DataTables (version 1.10.10 included) - http://datatables.net
 *   Ace - (version as of 06 Jan 2016 included) - https://ace.c9.io/ 
-*   The GUI plist editor was inspired by and borrows code from Davis Durman's FlexiJsonEditor - https://github.com/DavidDurman/FlexiJsonEditor
+*   The GUI plist editor was inspired by and borrows code from David Durman's FlexiJsonEditor - https://github.com/DavidDurman/FlexiJsonEditor
 *   The JavaScript plist parser was adapted from Todd Gehman's PlistParser: https://github.com/pugetive/plist_parser
 *   Chosen - (verson 1.4.2 included) - http://harvesthq.github.io/chosen/
 

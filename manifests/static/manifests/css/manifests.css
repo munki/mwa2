@@ -1,6 +1,7 @@
 #item_editor,
 #item_list {
     overflow-y: scroll;
+    overflow-x:hidden;
 }
 
 /* fix for DataTables duplicate sorting controls */
@@ -45,4 +46,5 @@ tbody.connectable {
     position: relative;
     top: 4px;
     left: -2px;
+    resize: vertical;
 }
