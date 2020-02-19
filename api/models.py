@@ -3,6 +3,8 @@ api/models.py
 """
 from django.conf import settings
 
+import datetime
+import time
 import os
 import logging
 import plistlib
@@ -88,7 +90,8 @@ class Plist(object):
                 # attempt to create missing intermediate dirs
                 os.makedirs(plist_parent_dir)
             except (IOError, OSError), err:
-                LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
+                createerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+                LOGGER.error('%s - %s: Create failed for %s/%s: %s', createerrortimestamp, user, kind, pathname, err)
                 raise FileWriteError(err)
         if plist_data:
             plist = plist_data
@@ -113,11 +116,13 @@ class Plist(object):
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(data.encode('utf-8'))
-            LOGGER.info('Created %s/%s', kind, pathname)
+            createtimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Created %s/%s', createtimestamp, user, kind, pathname)
             if user and GIT:
                 MunkiGit().add_file_at_path(filepath, user)
         except (IOError, OSError), err:
-            LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
+            createerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Create failed for %s/%s: %s', createerrortimestamp, user, kind, pathname, err)
             raise FileWriteError(err)
         return data
 
@@ -152,11 +157,13 @@ class Plist(object):
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(data)
-            LOGGER.info('Wrote %s/%s', kind, pathname)
+            writetimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Wrote %s/%s', writetimestamp, user, kind, pathname)
             if user and GIT:
                 MunkiGit().add_file_at_path(filepath, user)
         except (IOError, OSError), err:
-            LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
+            writeerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.error('%s - %s: Write failed for %s/%s: %s', writeerrortimestamp, user, kind, pathname, err)
             raise FileWriteError(err)
 
     @classmethod
@@ -168,11 +175,13 @@ class Plist(object):
                 '%s/%s does not exist' % (kind, pathname))
         try:
             os.unlink(filepath)
-            LOGGER.info('Deleted %s/%s', kind, pathname)
+            deletetimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Deleted %s/%s', deletetimestamp, user, kind, pathname)
             if user and GIT:
                 MunkiGit().delete_file_at_path(filepath, user)
         except (IOError, OSError), err:
-            LOGGER.error('Delete failed for %s/%s: %s', kind, pathname, err)
+            deleteerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.error('%s - %s: Delete failed for %s/%s: %s', deleteerrortimestamp, user, kind, pathname, err)
             raise FileDeleteError(err)
 
 
@@ -229,9 +238,11 @@ class MunkiFile(object):
             with open(filepath, 'w') as fileref:
                 for chunk in fileupload.chunks():
                     fileref.write(chunk)
-            LOGGER.info('Wrote %s/%s', kind, pathname)
+            writetimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Wrote %s/%s', writetimestamp, user, kind, pathname)
         except (IOError, OSError), err:
-            LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
+            writeerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Write failed for %s/%s: %s', writeerrortimestamp, user, kind, pathname, err)
             raise FileWriteError(err)
 
     @classmethod
@@ -241,9 +252,11 @@ class MunkiFile(object):
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(filedata)
-            LOGGER.info('Wrote %s/%s', kind, pathname)
+            writedatatimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Wrote %s/%s', writedatatimestamp, user, kind, pathname)
         except (IOError, OSError), err:
-            LOGGER.error('Write failed for %s/%s: %s', kind, pathname, err)
+            writedataerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Write failed for %s/%s: %s', writedataerrortimestamp, user, kind, pathname, err)
             raise FileWriteError(err)
 
     @classmethod
@@ -255,8 +268,10 @@ class MunkiFile(object):
                 '%s/%s does not exist' % (kind, pathname))
         try:
             os.unlink(filepath)
-            LOGGER.info('Deleted %s/%s', kind, pathname)
+            deletedatatimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Deleted %s/%s', deletedatatimestamp, user, kind, pathname)
         except (IOError, OSError), err:
-            LOGGER.error('Delete failed for %s/%s: %s', kind, pathname, err)
+            deletedataerrortimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            LOGGER.info('%s - %s: Delete failed for %s/%s: %s', deletedataerrortimestamp, user, kind, pathname, err)
             raise FileDeleteError(err)
         
