@@ -3,6 +3,7 @@ catalogs/models.py
 
 """
 #from django.db import models
+from __future__ import absolute_import
 import os
 import plistlib
 from xml.parsers.expat import ExpatError

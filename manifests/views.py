@@ -1,6 +1,7 @@
 """
 manifests/views.py
 """
+from __future__ import absolute_import
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -40,7 +41,7 @@ def index(request, manifest_path=None):
             LOGGER.debug("Got read request for %s", manifest_path)
             try:
                 plist = Plist.read('manifests', manifest_path)
-            except (FileDoesNotExistError, FileReadError), err:
+            except (FileDoesNotExistError, FileReadError) as err:
                 return HttpResponse(
                     json.dumps({'result': 'failed',
                                 'exception_type': str(type(err)),

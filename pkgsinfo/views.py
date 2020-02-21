@@ -2,6 +2,7 @@
 pkgsinfo/views.py
 """
 
+from __future__ import absolute_import
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -16,7 +17,10 @@ import json
 import logging
 import os
 import plistlib
-import urllib2
+try:
+    from urllib import quote  # Python 2.X
+except ImportError:
+    from urllib.parse import quote  # Python 3+
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 ICONS_DIR = os.path.join(REPO_DIR, 'icons')
@@ -39,7 +43,7 @@ def get_icon_url(pkginfo_plist):
             icon_name += '.png'
         icon_path = os.path.join(ICONS_DIR, icon_name)
         if os.path.isfile(icon_path):
-            return ICONS_URL + urllib2.quote(icon_name.encode('UTF-8'))
+            return ICONS_URL + quote(icon_name.encode('UTF-8'))
     return STATIC_URL + 'img/GenericPkg.png'
 
 
@@ -83,7 +87,7 @@ def index(request):
         return render(request, 'pkgsinfo/pkgsinfo.html', context=context)
     if request.method == 'POST':
         # DELETE
-        if request.META.has_key('HTTP_X_METHODOVERRIDE'):
+        if 'HTTP_X_METHODOVERRIDE' in request.META:
             http_method = request.META['HTTP_X_METHODOVERRIDE']
             if http_method.lower() == 'delete':
                 LOGGER.info("Got mass delete request for pkginfos")
@@ -101,7 +105,7 @@ def index(request):
                         pkginfo_list, request.user,
                         delete_pkgs=json_data.get('deletePkg', False)
                     )
-                except FileError, err:
+                except FileError as err:
                     return HttpResponse(
                         json.dumps({'result': 'failed',
                                     'exception_type': str(type(err)),
@@ -130,7 +134,7 @@ def index(request):
             Pkginfo.mass_edit_catalogs(
                 pkginfo_list, catalogs_to_add, catalogs_to_delete,
                 request.user)
-        except FileError, err:
+        except FileError as err:
             return HttpResponse(
                 json.dumps({'result': 'failed',
                             'exception_type': str(type(err)),

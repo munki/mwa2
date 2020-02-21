@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 import django.contrib.auth.views
@@ -30,6 +32,6 @@ urlpatterns += staticfiles_urlpatterns()
 try:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 except django.core.exceptions.ImproperlyConfigured:
-    print "**** MEDIA_URL or MEDIA_ROOT missing from settings.py       ****"
-    print "**** copy MEDIA_URL or MEDIA_ROOT from settings_template.py ****"
+    print("**** MEDIA_URL or MEDIA_ROOT missing from settings.py       ****")
+    print("**** copy MEDIA_URL or MEDIA_ROOT from settings_template.py ****")
     raise
