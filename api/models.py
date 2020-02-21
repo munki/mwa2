@@ -8,11 +8,11 @@ import datetime
 import time
 import os
 import logging
-import plistlib
 from xml.parsers.expat import ExpatError
 
 from munkiwebadmin.utils import MunkiGit
 from process.utils import record_status
+from munkiwebadmin.wrappers import readPlist, writePlistToString
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 
@@ -113,7 +113,7 @@ class Plist(object):
                     'version': '1.0',
                     'catalogs': ['development']
                 }
-        data = plistlib.writePlistToString(plist)
+        data = writePlistToString(plist)
         try:
             with open(filepath, 'w') as fileref:
                 fileref.write(data.encode('utf-8'))
@@ -134,7 +134,7 @@ class Plist(object):
         if not os.path.exists(filepath):
             raise FileDoesNotExistError('%s/%s not found' % (kind, pathname))
         try:
-            plistdata = plistlib.readPlist(filepath)
+            plistdata = readPlist(filepath)
             return plistdata
         except (IOError, OSError) as err:
             LOGGER.error('Read failed for %s/%s: %s', kind, pathname, err)

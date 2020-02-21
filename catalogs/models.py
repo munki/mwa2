@@ -5,10 +5,11 @@ catalogs/models.py
 #from django.db import models
 from __future__ import absolute_import
 import os
-import plistlib
 from xml.parsers.expat import ExpatError
 
 from django.conf import settings
+
+from munkiwebadmin.wrappers import readPlist
 
 REPO_DIR = settings.MUNKI_REPO_DIR
 
@@ -46,7 +47,7 @@ class Catalog(object):
                 continue
             try:
                 # attempt to read the plist so we know it's valid
-                _ = plistlib.readPlist(
+                _ = readPlist(
                     os.path.join(catalogs_path, name))
             except (ExpatError, IOError):
                 # skip items that aren't valid plists
@@ -66,7 +67,7 @@ class Catalog(object):
                 # don't process these
                 continue
             try:
-                catalog = plistlib.readPlist(
+                catalog = readPlist(
                     os.path.join(catalogs_path, name))
             except (ExpatError, IOError):
                 # skip items that aren't valid plists
@@ -82,7 +83,7 @@ class Catalog(object):
             REPO_DIR, 'catalogs', catalog_name)
         if os.path.exists(catalog_path):
             try:
-                catalog_items = plistlib.readPlist(catalog_path)
+                catalog_items = readPlist(catalog_path)
                 return catalog_items
             except (ExpatError, IOError):
                 return None

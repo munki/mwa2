@@ -12,11 +12,11 @@ from pkgsinfo.models import Pkginfo, PKGSINFO_STATUS_TAG
 from process.models import Process
 from api.models import Plist, \
                        FileError, FileDoesNotExistError
+from munkiwebadmin.wrappers import writePlistToString
 
 import json
 import logging
 import os
-import plistlib
 try:
     from urllib import quote  # Python 2.X
 except ImportError:
@@ -166,7 +166,7 @@ def detail(request, pkginfo_path):
         for item in default_items:
             if not item in plist:
                 plist[item] = default_items[item]
-        pkginfo_text = plistlib.writePlistToString(plist)
+        pkginfo_text = writePlistToString(plist)
         installer_item_path = plist.get('installer_item_location', '')
         icon_url = get_icon_url(plist)
         context = {'plist_text': pkginfo_text,

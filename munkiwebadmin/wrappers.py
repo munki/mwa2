@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2019 Greg Neagle.
+# Copyright 2019-2020 Greg Neagle.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 # limitations under the License.
 """
 wrappers.py
+
 Created by Greg Neagle on 2018-05-29.
+
 Some wrappers to paper over the differences between Python 2 and Python 3
 """
 
@@ -103,17 +105,13 @@ def writePlistToString(data):
 # pylint: enable=C0103
 
 
-# remap raw_input in Python 3
+# Python 2 and 3 wrapper for raw_input/input
 try:
-    _ = raw_input
+    # Python 2
+    get_input = raw_input # pylint: disable=raw_input-builtin
 except NameError:
-    raw_input = input
-
-def get_input(prompt=None):
-    '''Python 2 and 3 wrapper for raw_input/input'''
-    if not prompt:
-        prompt = ""
-    return raw_input(prompt)
+    # Python 3
+    get_input = input # pylint: disable=input-builtin
 
 
 # remap basestring in Python 3

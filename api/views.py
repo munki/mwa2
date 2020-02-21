@@ -22,9 +22,8 @@ import json
 import logging
 import os
 import mimetypes
-import plistlib
 import re
-from munkiwebadmin.wrappers import basestring
+from munkiwebadmin.wrappers import basestring, writePlistToString, readPlistFromString
 
 LOGGER = logging.getLogger('munkiwebadmin')
 
@@ -163,7 +162,7 @@ def plist_api(request, kind, filepath=None):
             return HttpResponse(json.dumps(response) + '\n',
                                 content_type='application/json')
         else:
-            return HttpResponse(plistlib.writePlistToString(response),
+            return HttpResponse(writePlistToString(response),
                                 content_type='application/xml')
 
     if 'HTTP_X_METHODOVERRIDE' in request.META:
@@ -196,7 +195,7 @@ def plist_api(request, kind, filepath=None):
                 request_data = json.loads(request.body)
                 request_data = convert_strings_to_dates(request_data)
             else:
-                request_data = plistlib.readPlistFromString(request.body)
+                request_data = readPlistFromString(request.body)
         if (filepath and 'filename' in request_data
                 and filepath != request_data['filename']):
             return HttpResponse(
@@ -246,7 +245,7 @@ def plist_api(request, kind, filepath=None):
                     content_type='application/json', status=201)
             else:
                 return HttpResponse(
-                    plistlib.writePlistToString(request_data),
+                    writePlistToString(request_data),
                     content_type='application/xml', status=201)
 
     elif request.method == 'PUT':
@@ -268,7 +267,7 @@ def plist_api(request, kind, filepath=None):
             request_data = json.loads(request.body)
             request_data = convert_strings_to_dates(request_data)
         else:
-            request_data = plistlib.readPlistFromString(request.body)
+            request_data = readPlistFromString(request.body)
         if not request_data:
             # need to deal with this issue
             return HttpResponse(
@@ -284,7 +283,7 @@ def plist_api(request, kind, filepath=None):
             del request_data['filename']
 
         try:
-            data = plistlib.writePlistToString(request_data)
+            data = writePlistToString(request_data)
             Plist.write(data, kind, filepath, request.user)
         except FileError as err:
             return HttpResponse(
@@ -300,7 +299,7 @@ def plist_api(request, kind, filepath=None):
                     content_type='application/json')
             else:
                 return HttpResponse(
-                    plistlib.writePlistToString(request_data),
+                    writePlistToString(request_data),
                     content_type='application/xml')
 
     elif request.method == 'PATCH':
@@ -322,7 +321,7 @@ def plist_api(request, kind, filepath=None):
             request_data = json.loads(request.body)
             request_data = convert_strings_to_dates(request_data)
         else:
-            request_data = plistlib.readPlistFromString(request.body)
+            request_data = readPlistFromString(request.body)
         if not request_data:
             # need to deal with this issue
             return HttpResponse(
@@ -341,7 +340,7 @@ def plist_api(request, kind, filepath=None):
         #plist_data['filename'] = filepath
         plist_data.update(request_data)
         try:
-            data = plistlib.writePlistToString(plist_data)
+            data = writePlistToString(plist_data)
             Plist.write(data, kind, filepath, request.user)
         except FileError as err:
             return HttpResponse(
@@ -357,7 +356,7 @@ def plist_api(request, kind, filepath=None):
                     content_type='application/json')
             else:
                 return HttpResponse(
-                    plistlib.writePlistToString(plist_data),
+                    writePlistToString(plist_data),
                     content_type='application/xml')
 
     elif request.method == 'DELETE':
@@ -444,7 +443,7 @@ def file_api(request, kind, filepath=None):
                 return HttpResponse(json.dumps(response) + '\n',
                                     content_type='application/json')
             else:
-                return HttpResponse(plistlib.writePlistToString(response),
+                return HttpResponse(writePlistToString(response),
                                     content_type='application/xml')
 
     if 'HTTP_X_METHODOVERRIDE' in request.META:
