@@ -244,7 +244,7 @@ function getSuggestedItems() {
             var catalog_name = catalog_list[i];
             if ( data.hasOwnProperty(catalog_name) ) {
                 if ( data[catalog_name].hasOwnProperty('suggested') ) {
-                    Array.prototype.push.apply(suggested, data[catalog_name]['suggested']);
+                    Array.prototype.push.apply(suggested, data[catalog_name]['suggested'].normalize('NFC'));
                 }
             }
         }
@@ -282,9 +282,9 @@ function getValidInstallItems() {
         for (var i=0, l=catalog_list.length; i<l; i++) {
             var catalog_name = catalog_list[i];
             if ( data.hasOwnProperty(catalog_name) ) {
-                Array.prototype.push.apply(valid, data[catalog_name]['suggested']);
-                Array.prototype.push.apply(valid, data[catalog_name]['updates']);
-                Array.prototype.push.apply(valid, data[catalog_name]['with_version']);
+                Array.prototype.push.apply(valid, data[catalog_name]['suggested'].normalize('NFC'));
+                Array.prototype.push.apply(valid, data[catalog_name]['updates'].normalize('NFC'));
+                Array.prototype.push.apply(valid, data[catalog_name]['with_version'].normalize('NFC'));
             }
         }
         return uniques(valid);
@@ -296,16 +296,17 @@ function getValidInstallItems() {
 
 var validator = function(path, val) {
     // returns a bootstrap class name to highlight items that aren't 'valid'
+    var normalized_val = val.normalize('NFC')
     var path_items = path.split('.');
     if (path_items.indexOf('catalogs') != -1) {
         //check val against valid catalog names
         var catalog_names = $('#data_storage').data('catalog_names');
-        if (catalog_names && catalog_names.indexOf(val) == -1) return 'danger';
+        if (catalog_names && catalog_names.indexOf(normalized_val) == -1) return 'danger';
     }
     if (path_items.indexOf('included_manifests') != -1) {
         //check val against valid manifest names
         var manifest_names = $('#data_storage').data('manifest_names');
-        if (manifest_names && manifest_names.indexOf(val) == -1) return 'danger';
+        if (manifest_names && manifest_names.indexOf(normalized_val) == -1) return 'danger';
     }
     if (path_items.indexOf('featured_items') != -1 ||
         path_items.indexOf('managed_installs') != -1 ||
@@ -314,7 +315,7 @@ var validator = function(path, val) {
         path_items.indexOf('optional_installs') != -1) {
             //check val against valid install items
             var valid_names = getValidInstallItems();
-            if (valid_names.length && valid_names.indexOf(val) == -1) {
+            if (valid_names.length && valid_names.indexOf(normalized_val) == -1) {
                 return 'danger';
             }
     }
