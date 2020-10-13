@@ -230,6 +230,12 @@ function getCurrentCatalogList() {
 }
 
 
+function NFCnormalize(aString) {
+    // return a Unicode string normalized as NFC
+    return aString.normalize('NFC')
+}
+
+
 function getSuggestedItems() {
     // return a list of item names based on current manifest catalog list
     var data = $('#data_storage').data('catalog_data');
@@ -244,7 +250,7 @@ function getSuggestedItems() {
             var catalog_name = catalog_list[i];
             if ( data.hasOwnProperty(catalog_name) ) {
                 if ( data[catalog_name].hasOwnProperty('suggested') ) {
-                    Array.prototype.push.apply(suggested, data[catalog_name]['suggested'].normalize('NFC'));
+                    Array.prototype.push.apply(suggested, data[catalog_name]['suggested'].map(NFCnormalize));
                 }
             }
         }
@@ -268,7 +274,6 @@ function getValidCatalogNames() {
     return [];
 }
 
-
 function getValidInstallItems() {
     // return a list of item names based on current manifest catalog list
     var data = $('#data_storage').data('catalog_data');
@@ -282,9 +287,9 @@ function getValidInstallItems() {
         for (var i=0, l=catalog_list.length; i<l; i++) {
             var catalog_name = catalog_list[i];
             if ( data.hasOwnProperty(catalog_name) ) {
-                Array.prototype.push.apply(valid, data[catalog_name]['suggested'].normalize('NFC'));
-                Array.prototype.push.apply(valid, data[catalog_name]['updates'].normalize('NFC'));
-                Array.prototype.push.apply(valid, data[catalog_name]['with_version'].normalize('NFC'));
+                Array.prototype.push.apply(valid, data[catalog_name]['suggested'].map(NFCnormalize));
+                Array.prototype.push.apply(valid, data[catalog_name]['updates'].map(NFCnormalize));
+                Array.prototype.push.apply(valid, data[catalog_name]['with_version'].map(NFCnormalize));
             }
         }
         return uniques(valid);
@@ -296,7 +301,7 @@ function getValidInstallItems() {
 
 var validator = function(path, val) {
     // returns a bootstrap class name to highlight items that aren't 'valid'
-    var normalized_val = val.normalize('NFC')
+    var normalized_val = NFCnormalize(val)
     var path_items = path.split('.');
     if (path_items.indexOf('catalogs') != -1) {
         //check val against valid catalog names
