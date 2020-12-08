@@ -2,7 +2,7 @@
 
 This is version 2 of MunkiWebAdmin, a web-based administration tool for Munki.
 
-All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdmin2 — consider using Sal or MunkiReport-PHP for reporting. Both are excellent.
+All reporting (formerly part of MunkiWebAdmin) has been removed from MunkiWebAdmin2 — consider using [Sal](https://github.com/grahamgilbert/sal) or [MunkiReport-PHP](https://github.com/munkireport/munkireport-php) for reporting. Both are excellent.
 
 MunkiWebAdmin2 focuses on web-based editing of manifests and pkginfo files.
 
