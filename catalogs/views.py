@@ -2,6 +2,7 @@
 catalogs//views.py
 """
 
+from __future__ import absolute_import
 from django.http import HttpResponse
 from catalogs.models import Catalog
 import json

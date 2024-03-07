@@ -2,10 +2,10 @@
 pkgsinfo/models.py
 """
 
+from __future__ import absolute_import
 from django.db import models
 import os
 import logging
-import plistlib
 from collections import defaultdict
 from distutils.version import LooseVersion
 from multiprocessing.pool import ThreadPool
@@ -16,6 +16,7 @@ from process.utils import record_status
 from catalogs.models import Catalog
 from api.models import Plist, MunkiFile, \
                        FileReadError, FileWriteError, FileDeleteError
+from munkiwebadmin.wrappers import readPlist, writePlistToString
 
 
 REPO_DIR = settings.MUNKI_REPO_DIR
@@ -33,7 +34,7 @@ def pkg_ref_count(pkginfo_path, catalog_items):
     the installer_item_location'''
     filepath = os.path.join(PKGSINFO_PATH, os.path.normpath(pkginfo_path))
     try:
-        plistdata = plistlib.readPlist(filepath)
+        plistdata = readPlist(filepath)
     except (ExpatError, IOError):
         return 0, ''
     pkg_path = plistdata.get('installer_item_location')
@@ -52,7 +53,7 @@ def process_file(pkginfo_path):
     file and returns a tuple of name, version, catalogs, and relative path'''
     filepath = os.path.join(PKGSINFO_PATH, os.path.normpath(pkginfo_path))
     try:
-        pkginfo = plistlib.readPlist(filepath)
+        pkginfo = readPlist(filepath)
     except (ExpatError, IOError):
         return ()
     return (pkginfo.get('name', 'NO_NAME'),
@@ -99,7 +100,7 @@ class Pkginfo(Plist):
         record(message='Processing %s files' % len(files))
         all_catalog = os.path.join(CATALOGS_PATH, 'all')
         try:
-            all_items = plistlib.readPlist(all_catalog)
+            all_items = readPlist(all_catalog)
         except (ExpatError, OSError, IOError):
             all_items = []
         use_slower_approach = False
@@ -130,7 +131,7 @@ class Pkginfo(Plist):
                 pathname = files[index]
                 pkginfo_dict[name].append((version, catalogs, pathname))
         for key in pkginfo_dict.keys():
-            pkginfo_dict[key].sort(compare_versions)
+            pkginfo_dict[key].sort()
         LOGGER.debug('Sorted pkgsinfo dict')
 
         # now convert to a list of lists
@@ -162,13 +163,13 @@ class Pkginfo(Plist):
                     delete_this_pkg = True
             try:
                 cls.delete('pkgsinfo', pathname, user)
-            except FileDeleteError, err:
+            except FileDeleteError as err:
                 errors.append('Error %s when removing %s' % (err, pathname))
             else:
                 if delete_this_pkg:
                     try:
                         MunkiFile.delete('pkgs', pkg_path, user)
-                    except FileDeleteError, err:
+                    except FileDeleteError as err:
                         errors.append('Error %s when removing %s'
                                       % (err, pkg_path))
         if errors:
@@ -209,10 +210,10 @@ class Pkginfo(Plist):
                 # remove catalogs to remove
                 plist['catalogs'] = [item for item in plist['catalogs']
                                      if item not in catalogs_to_remove]
-                data = plistlib.writePlistToString(plist)
+                data = writePlistToString(plist)
                 try:
                     cls.write(data, 'pkgsinfo', pathname, user)
-                except FileWriteError, err:
+                except FileWriteError as err:
                     LOGGER.error('Update failed for %s: %s', pathname, err)
                     errors.append('Error %s when updating %s' % (err, pathname))
                     continue

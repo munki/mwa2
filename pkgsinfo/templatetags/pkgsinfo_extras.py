@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 from django import template
 from django.template.defaultfilters import stringfilter
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 from distutils.version import LooseVersion
+from munkiwebadmin.wrappers import basestring
 
 # Reference for creating custom filters and tags:-
 # https://docs.djangoproject.com/en/dev/howto/custom-template-tags/

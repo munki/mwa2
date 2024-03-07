@@ -3,6 +3,7 @@ munkiwebadmin/utils.py
 
 utilities used by other apps
 """
+from __future__ import absolute_import
 import logging
 import os
 import subprocess

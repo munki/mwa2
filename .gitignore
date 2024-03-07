@@ -4,3 +4,4 @@ settings.py
 db.sqlite3
 .DS_Store
 unused_*
+.idea

@@ -1,6 +1,7 @@
 # See https://github.com/m7v8/django-basic-authentication-decorator
 # and https://djangosnippets.org/snippets/243/
 
+from __future__ import absolute_import
 import base64
 
 from django.http import HttpResponse
