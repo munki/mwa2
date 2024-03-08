@@ -35,7 +35,7 @@ def status(request):
 @login_required
 def index(request, manifest_path=None):
     '''Returns manifest list or detail'''
-    if manifest_path and request.is_ajax():
+    if manifest_path and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         # return manifest detail
         if request.method == 'GET':
             LOGGER.debug("Got read request for %s", manifest_path)
@@ -47,7 +47,7 @@ def index(request, manifest_path=None):
                                 'exception_type': str(type(err)),
                                 'detail': str(err)}),
                     content_type='application/json', status=404)
-            manifest_text = writePlistToString(plist)
+            manifest_text = writePlistToString(plist).decode("UTF-8")
             context = {'plist_text': manifest_text,
                        'pathname': manifest_path}
             return render(request, 'manifests/detail.html', context=context)

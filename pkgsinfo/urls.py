@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from django.conf.urls import url
+from django.urls import re_path
 import pkgsinfo.views
 
 urlpatterns = [
-    url(r'^$', pkgsinfo.views.index),
-    url(r'^__get_process_status$', pkgsinfo.views.status),
-    url(r'^_json$', pkgsinfo.views.getjson),
-    url(r'^(?P<pkginfo_path>^.*$)', pkgsinfo.views.detail)
+    re_path(r'^$', pkgsinfo.views.index),
+    re_path(r'^__get_process_status$', pkgsinfo.views.status),
+    re_path(r'^_json$', pkgsinfo.views.getjson),
+    re_path(r'^(?P<pkginfo_path>^.*$)', pkgsinfo.views.detail)
 ]

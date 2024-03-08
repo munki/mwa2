@@ -7,8 +7,7 @@ import base64
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 
-#############################################################################
-#
+
 def view_or_basicauth(view, request, test_func, realm="", *args, **kwargs):
     """
     This is a helper function used by both 'logged_in_or_basicauth' and
@@ -22,30 +21,21 @@ def view_or_basicauth(view, request, test_func, realm="", *args, **kwargs):
         return view(request, *args, **kwargs)
 
     # They are not logged in. See if they provided login credentials
-    # Some web server configurations strip the auth header before we can use
-    # it. Turning that config off may not be desirable always. So support an
-    # alternate auth header as well: X-Authorization
-    if ('HTTP_AUTHORIZATION' in request.META or
-            'HTTP_X_AUTHORIZATION' in request.META):
-        auth = (request.META.get('HTTP_AUTHORIZATION') or
-                request.META.get('HTTP_X_AUTHORIZATION')).split()
+    #
+    if 'HTTP_AUTHORIZATION' in request.META:
+        auth = request.META['HTTP_AUTHORIZATION'].split()
         if len(auth) == 2:
-            # NOTE: We only support basic authentication for now.
+            # NOTE: We are only support basic authentication for now.
             #
             if auth[0].lower() == "basic":
-                try:
-                    uname, passwd = base64.b64decode(
-                        auth[1]).decode('utf-8').split(':', 1)
-                    user = authenticate(username=uname, password=passwd)
-                    if user is not None:
-                        if user.is_active:
-                            login(request, user)
-                            request.user = user
-                            if test_func(request.user):
-                                return view(request, *args, **kwargs)
-                except Exception:
-                    # any error here, let's fall through to a 401
-                    pass
+                uname, passwd = base64.b64decode(auth[1]).decode('utf-8').split(':', 1)
+                user = authenticate(username=uname, password=passwd)
+                if user is not None:
+                    if user.is_active:
+                        login(request, user)
+                        request.user = user
+                        if test_func(request.user):
+                            return view(request, *args, **kwargs)
 
     # Either they did not provide an authorization header or
     # something in the authorization attempt failed. Send a 401
@@ -56,8 +46,7 @@ def view_or_basicauth(view, request, test_func, realm="", *args, **kwargs):
     response['WWW-Authenticate'] = 'Basic realm="%s"' % realm
     return response
 
-#############################################################################
-#
+
 def logged_in_or_basicauth(realm=""):
     """
     A simple decorator that requires a user to be logged in. If they are not
@@ -89,14 +78,17 @@ def logged_in_or_basicauth(realm=""):
     """
     def view_decorator(func):
         def wrapper(request, *args, **kwargs):
-            return view_or_basicauth(func, request,
-                                     lambda u: u.is_authenticated(),
-                                     realm, *args, **kwargs)
+            return view_or_basicauth(
+                    func,
+                    request,
+                    lambda u: u.is_authenticated,
+                    realm,
+                    *args,
+                    **kwargs)
         return wrapper
     return view_decorator
 
-#############################################################################
-#
+
 def has_perm_or_basicauth(perm, realm=""):
     """
     This is similar to the above decorator 'logged_in_or_basicauth'
@@ -112,8 +104,12 @@ def has_perm_or_basicauth(perm, realm=""):
     """
     def view_decorator(func):
         def wrapper(request, *args, **kwargs):
-            return view_or_basicauth(func, request,
-                                     lambda u: u.has_perm(perm),
-                                     realm, *args, **kwargs)
+            return view_or_basicauth(
+                    func,
+                    request,
+                    lambda u: u.has_perm(perm),
+                    realm,
+                    *args,
+                    **kwargs)
         return wrapper
     return view_decorator

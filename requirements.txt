@@ -1,3 +1,1 @@
-Django==1.9.5
-django_wsgiserver
-six
+Django==4.2.11

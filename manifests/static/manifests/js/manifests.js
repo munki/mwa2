@@ -287,9 +287,15 @@ function getValidInstallItems() {
         for (var i=0, l=catalog_list.length; i<l; i++) {
             var catalog_name = catalog_list[i];
             if ( data.hasOwnProperty(catalog_name) ) {
-                Array.prototype.push.apply(valid, data[catalog_name]['suggested'].map(NFCnormalize));
-                Array.prototype.push.apply(valid, data[catalog_name]['updates'].map(NFCnormalize));
-                Array.prototype.push.apply(valid, data[catalog_name]['with_version'].map(NFCnormalize));
+                if ( data[catalog_name].hasOwnProperty('suggested') ) {
+                    Array.prototype.push.apply(valid, data[catalog_name]['suggested'].map(NFCnormalize));
+                }
+                if ( data[catalog_name].hasOwnProperty('updates') ) {
+                    Array.prototype.push.apply(valid, data[catalog_name]['updates'].map(NFCnormalize));
+                }
+                if ( data[catalog_name].hasOwnProperty('with_version') ) {
+                    Array.prototype.push.apply(valid, data[catalog_name]['with_version'].map(NFCnormalize));
+                }
             }
         }
         return uniques(valid);

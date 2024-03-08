@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from django.conf.urls import url
+from django.urls import re_path
 import process.views
 
 urlpatterns = [
-    url(r'^$', process.views.index),
-    url(r'^run$', process.views.run),
-    url(r'^status$', process.views.status),
-    url(r'^delete$', process.views.delete)
+    re_path(r'^$', process.views.index),
+    re_path(r'^run$', process.views.run),
+    re_path(r'^status$', process.views.status),
+    re_path(r'^delete$', process.views.delete)
 ]
