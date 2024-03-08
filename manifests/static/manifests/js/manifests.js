@@ -205,6 +205,7 @@ var key_list = {'catalogs': 'Catalogs',
                 'managed_uninstalls': 'Managed Uninstalls',
                 'managed_updates': 'Managed Updates',
                 'optional_installs': 'Optional Installs',
+                'default_installs': 'Default Installs',
                 };
 
 // these should be moved into their own file maybe so they can be edited
@@ -218,6 +219,7 @@ var keys_and_types = {'catalogs': ['catalogname'],
                       'managed_uninstalls': ['itemname'],
                       'managed_updates': ['itemname'],
                       'optional_installs': ['itemname'],
+                      'default_installs': ['itemname'],
                      };
 
 
@@ -371,6 +373,7 @@ function setupTypeahead() {
 function connectSortables() {
     // Connect our sortable lists of installer items so we can drag items
     // between them
+	$('tr[data-path="default_installs"] tbody').addClass('connectable');
     $('tr[data-path="featured_items"] tbody').addClass('connectable');
     $('tr[data-path="managed_installs"] tbody').addClass('connectable');
     $('tr[data-path="managed_uninstalls"] tbody').addClass('connectable');
