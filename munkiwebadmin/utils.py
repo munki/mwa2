@@ -73,11 +73,11 @@ class MunkiGit(object):
         self.git_repo_dir = os.path.dirname(a_path)
         status_results = self.run_git(['status', a_path])
         status_output = status_results['output']
-        if status_output.find("new file:") != -1:
+        if status_output.find(b"new file:") != -1:
             action = 'created'
-        elif status_output.find("modified:") != -1:
+        elif status_output.find(b"modified:") != -1:
             action = 'modified'
-        elif status_output.find("deleted:") != -1:
+        elif status_output.find(b"deleted:") != -1:
             action = 'deleted'
         else:
             action = 'did something with'
