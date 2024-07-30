@@ -96,7 +96,7 @@ def run(request):
             time.sleep(1)
 
         proc = subprocess.Popen([MAKECATALOGS, REPO_DIR],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE)
         record = Process(name='makecatalogs')
         record.pid = proc.pid
         record.save()
