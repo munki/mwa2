@@ -156,8 +156,8 @@ class Plist(object):
                 LOGGER.error('Create failed for %s/%s: %s', kind, pathname, err)
                 raise FileWriteError(err)
         try:
-            with open(filepath, 'w') as fileref:
-                fileref.write(data.decode('utf-8'))
+            with open(filepath, 'wb') as fileref:
+                fileref.write(data)
             writetimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
             LOGGER.info('%s - %s: Wrote %s/%s', writetimestamp, user, kind, pathname)
             if user and GIT:
