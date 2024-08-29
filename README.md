@@ -1,3 +1,8 @@
+*NOTE:* the Python 2 version of this project is no longer supported. Most of the documentation refers to the Python 2 version and has yet to be updated.
+A Python 3 version of this project is availble in the py3 branch.
+
+https://github.com/munki/mwa2/tree/py3
+
 ## Introduction
 
 This is version 2 of MunkiWebAdmin, a web-based administration tool for Munki.
