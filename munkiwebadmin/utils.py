@@ -10,7 +10,7 @@ from django.conf import settings
 
 APPNAME = settings.APPNAME
 REPO_DIR = settings.MUNKI_REPO_DIR
-
+SYNC_REMOTE_REPO = settings.SYNC_REMOTE_REPO
 LOGGER = logging.getLogger('munkiwebadmin')
 
 try:
@@ -56,6 +56,27 @@ class MunkiGit(object):
         self.run_git(['status', a_path])
         return self.results['returncode'] == 0
 
+    def sync_changes_to_repo(self):
+        LOGGER.info("Syncing changes...................")
+        os.chdir(REPO_DIR)
+        #get_branch_name = self.run_git(['symbolic-ref', '--short', 'HEAD'])
+        #branch_name = get_branch_name['output'].strip()
+        if self.results['returncode'] == 0:
+            # Pull changes
+            self.run_git(['pull'])
+            if self.results['returncode'] != 0:
+                LOGGER.info("Failed to pull changes")
+                LOGGER.info(self.results['error'])
+                return -1
+
+            # Push changes
+            self.run_git(['push'])
+            if self.results['returncode'] != 0:
+                LOGGER.info("Failed to push changes")
+                LOGGER.info(self.results['error'])
+                return -1
+        return 0
+
     def commit_file_at_path(self, a_path, committer):
         """Commits the file at 'a_path'. This method will also automatically
         generate the commit log appropriate for the status of a_path where
@@ -96,7 +117,13 @@ class MunkiGit(object):
             LOGGER.info("Failed to commit changes to %s", a_path)
             LOGGER.info(self.results['error'])
             return -1
+
+        # if syncing has been set then sync with remote repo
+        if SYNC_REMOTE_REPO:
+            #sync changes
+            self.sync_changes_to_repo()
         return 0
+
 
     def add_file_at_path(self, a_path, committer):
         """Commits a file to the Git repo."""

@@ -170,7 +170,7 @@ USE_LDAP = False
 if USE_LDAP:
     import ldap
     from django_auth_ldap.config import LDAPSearch, PosixGroupType
-    
+
     # LDAP settings
     AUTH_LDAP_SERVER_URI = "ldap://foo.example.com"
     AUTH_LDAP_BIND_DN = ""
@@ -183,7 +183,7 @@ if USE_LDAP:
         ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)")
     AUTH_LDAP_GROUP_TYPE = PosixGroupType()
     AUTH_LDAP_FIND_GROUP_PERMS = True
-    AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName", 
+    AUTH_LDAP_USER_ATTR_MAP = {"first_name": "givenName",
                                "last_name": "sn",
                                "email": "mail"}
     # Cache group memberships for an hour to minimize LDAP traffic
@@ -228,15 +228,20 @@ MUNKI_REPO_DIR = '/Users/Shared/munki_repo'
 # be sure to include trailing slash
 
 # for development work (Set DEBUG=True), you can set the ICONS_URL to MEDIA_URL.
-# This is not recommended for production. 
+# This is not recommended for production.
 MEDIA_ROOT = os.path.join(MUNKI_REPO_DIR, 'icons')
 ICONS_URL = MEDIA_URL
 
-# For production, you can point to your Munki server 
+# For production, you can point to your Munki server
 # if retrieving icons requires no special authentication
 # -- otherwise, you'll need some other static file server
 #ICONS_URL = "http://localhost/munki_repo/icons/"
 #ICONS_URL = "http://munki/repo/icons/"
+
+# For suncing changesfrom the repositoty mwa2 uses to the remote server
+# For this to work munki_repo/.git/config should have branch and remote configured.
+# You should be able to manually run, 'git pull' and git 'git push' from the repo mwa2 is using
+SYNC_REMOTE_REPO = False
 
 # path to the makecatalogs binary
 MAKECATALOGS_PATH = '/usr/local/munki/makecatalogs'
